@@ -1,0 +1,5 @@
+/Users/msmith/Projects/Standalone_MIPS_Simulator/Standalone_MIPS_Simulator/obj/x86/Debug/.NETFramework,Version=v4.5.AssemblyAttribute.cs
+/Users/msmith/Projects/Standalone_MIPS_Simulator/Standalone_MIPS_Simulator/bin/Debug/Standalone_MIPS_Simulator.exe.mdb
+/Users/msmith/Projects/Standalone_MIPS_Simulator/Standalone_MIPS_Simulator/bin/Debug/Standalone_MIPS_Simulator.exe
+/Users/msmith/Projects/Standalone_MIPS_Simulator/Standalone_MIPS_Simulator/obj/x86/Debug/Standalone_MIPS_Simulator.exe
+/Users/msmith/Projects/Standalone_MIPS_Simulator/Standalone_MIPS_Simulator/obj/x86/Debug/Standalone_MIPS_Simulator.exe.mdb
