@@ -18,7 +18,7 @@ namespace Standalone_MIPS_Emulator
 {
 	public abstract class MIPS_Coprocessor
 	{
-		public abstract UInt32 getRegister(byte register);
-		public abstract void setRegister(byte register, byte value);
+		public abstract UInt32 getRegister(byte register, byte sel);
+		public abstract void setRegister(byte register, byte sel, UInt32 value);
 	}
 }

@@ -677,7 +677,28 @@ namespace Standalone_MIPS_Emulator
 	public class MIPS_COP0 : MIPS_Instruction
 	{
 		public override void execute(ref MIPS_InstructionContext context) {
-
+			const byte selmask = 0x7;
+			byte sel = (byte)(base.zeroExtend16(context.getImm())&selmask);
+			switch (context.getRegisters()[context.getRS()].getValue()) {
+				// Move from Coprocessor 0
+				// FIXME: Requires sel field to be zero.... but who cares?
+				// FIXME: Throws Coprocessor Unusuable, Reserved Instruction
+				case 0x0: {
+					byte cpcregister = (byte)context.getRegisters()[context.getRD()].getValue();
+					UInt32 value = context.getCoprocessors()[0].getRegister(cpcregister, sel);
+					context.getRegisters()[context.getRT()].setValue(value);
+					break;
+				}
+				// Move to Coprocessor 0
+				// FIXME: Requires sel field to be zero.... but who cares?
+				// FIXME: Throws Coprocessor Unusuable, Reserved Instruction
+				case 0x4: {
+					byte cpcregister = (byte)context.getRegisters()[context.getRD()].getValue();
+					UInt32 value = context.getRegisters()[context.getRT()].getValue();
+					context.getCoprocessors()[0].setRegister((byte)cpcregister, sel, value);
+					break;
+				}
+			}
 		}
 	}
 

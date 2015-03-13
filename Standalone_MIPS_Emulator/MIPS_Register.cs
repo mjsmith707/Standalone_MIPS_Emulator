@@ -1,6 +1,6 @@
 ﻿using System;
 
-// MIPS Register Class
+// MIPS GPR Register Class
 // Essentially a UInt32 wrapper plus muting ability.
 namespace Standalone_MIPS_Emulator
 {

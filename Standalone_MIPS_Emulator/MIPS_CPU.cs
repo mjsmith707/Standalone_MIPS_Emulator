@@ -122,7 +122,7 @@ namespace Standalone_MIPS_Emulator
 			mainMemory = new MIPS_Memory();
 
 			// Initialize Instruction Context
-			context = new MIPS_InstructionContext(ref mainMemory, ref registerFile, ref PC, ref hi, ref lo, ref branchTarget, ref branchDelay);
+			context = new MIPS_InstructionContext(ref mainMemory, ref registerFile, ref PC, ref hi, ref lo, ref branchTarget, ref branchDelay, ref coprocessors);
 
 			// Initialize Instruction Set
 			initialize_InstructionSet();

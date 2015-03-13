@@ -45,6 +45,7 @@
     <Compile Include="MIPS_Coprocessor.cs" />
     <Compile Include="MIPS_CPC0.cs" />
     <Compile Include="MIPS_CPU.cs" />
+    <Compile Include="MIPS_CPC0Register.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
 </Project>

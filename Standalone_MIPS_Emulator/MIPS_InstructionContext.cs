@@ -32,8 +32,9 @@ namespace Standalone_MIPS_Emulator
 		private MIPS_Register lo;
 		private MIPS_Boolean branchDelay;
 		private MIPS_Register branchTarget;
+		private MIPS_Coprocessor[] coprocessors;
 
-		public MIPS_InstructionContext (ref MIPS_Memory memory, ref MIPS_Register[] regfile, ref MIPS_Register PC, ref MIPS_Register hi, ref MIPS_Register lo, ref MIPS_Register branchTarget, ref MIPS_Boolean branchDelay)
+		public MIPS_InstructionContext (ref MIPS_Memory memory, ref MIPS_Register[] regfile, ref MIPS_Register PC, ref MIPS_Register hi, ref MIPS_Register lo, ref MIPS_Register branchTarget, ref MIPS_Boolean branchDelay, ref MIPS_Coprocessor[] coprocessors)
 		{
 			this.mainMemory = memory;
 			this.registerFile = regfile;
@@ -49,6 +50,7 @@ namespace Standalone_MIPS_Emulator
 			this.funct = 0;
 			this.branchDelay = branchDelay;
 			this.branchTarget = branchTarget;
+			this.coprocessors = coprocessors;
 		}
 
 		public void setContext(byte opcode, byte rs, byte rt, byte rd, byte shamt, byte funct, UInt16 imm, UInt32 jimm) {
@@ -88,6 +90,10 @@ namespace Standalone_MIPS_Emulator
 
 		public void setBranchDelay(bool value) {
 			this.branchDelay.setValue(value);
+		}
+
+		public MIPS_Coprocessor[] getCoprocessors() {
+			return this.coprocessors;
 		}
 
 		public byte getOpcode() {
