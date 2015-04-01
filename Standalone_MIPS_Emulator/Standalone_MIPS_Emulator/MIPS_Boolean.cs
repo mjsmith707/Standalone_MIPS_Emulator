@@ -13,25 +13,24 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 
 using System;
 
+// Bool wrapper class to allow referencing
 namespace Standalone_MIPS_Emulator
 {
-	class MainClass
+	public class MIPS_Boolean
 	{
-		public static void Main (string[] args)
+		private bool value;
+		public MIPS_Boolean (bool value)
 		{
-			MIPS_CPU CPU0 = new MIPS_CPU();
-			// 001000 00001 00010 00000 00000 001111
-			// addi		r1   r2		F
-			// 000100 00000 00000 11111 11111 111110
-			// beq		r0 	r0		-2
-			//UInt32 addi = 0x2022000F;
-			//UInt32 noop = 0x0;
-			//UInt32 beq = 0x1000FFFE;
-			//CPU0.loadText(0x00000000, addi);
-			//CPU0.loadText(0x00000004, beq);
-			//CPU0.loadText(0x00000008, noop);
-			CPU0.loadFile(0x00000000, "./main.bin");
-			CPU0.start();
+			this.value = value;
+		}
+
+		public bool getValue() {
+			return this.value;
+		}
+
+		public void setValue(bool value) {
+			this.value = value;
 		}
 	}
 }
+

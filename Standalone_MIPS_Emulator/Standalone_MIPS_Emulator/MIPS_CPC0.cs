@@ -23,7 +23,6 @@ namespace Standalone_MIPS_Emulator
 
 		public MIPS_CPC0 ()
 		{
-			/*
 			// Initialize Registers
 			// Too easy to just have normal registers
 			// we have to deal with the sel field...
@@ -155,7 +154,6 @@ namespace Standalone_MIPS_Emulator
 			registerFile[29,1] = new MIPS_CPC0Register();
 			registerFile[30,0] = new MIPS_CPC0Register();
 			registerFile[31,0] = new MIPS_CPC0Register();
-			*/
 		}
 
 		public override UInt32 getRegister(byte register, byte sel)

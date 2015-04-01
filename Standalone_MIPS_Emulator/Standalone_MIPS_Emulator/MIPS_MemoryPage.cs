@@ -13,25 +13,35 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 
 using System;
 
+// Basic paged memory. 
+// Will need complete rewrite for virtual memory support
 namespace Standalone_MIPS_Emulator
 {
-	class MainClass
+	public class MIPS_MemoryPage
 	{
-		public static void Main (string[] args)
+		// 4096 Byte Page Size
+		private const UInt32 pagesize = 0x00001000;
+		private const UInt32 pagemask = 0x00000FFF;
+
+		// Page members
+		private UInt32 addrbase;
+		private byte flags;
+		private byte[] memory;
+
+		public MIPS_MemoryPage (UInt32 addrbase, byte flags)
 		{
-			MIPS_CPU CPU0 = new MIPS_CPU();
-			// 001000 00001 00010 00000 00000 001111
-			// addi		r1   r2		F
-			// 000100 00000 00000 11111 11111 111110
-			// beq		r0 	r0		-2
-			//UInt32 addi = 0x2022000F;
-			//UInt32 noop = 0x0;
-			//UInt32 beq = 0x1000FFFE;
-			//CPU0.loadText(0x00000000, addi);
-			//CPU0.loadText(0x00000004, beq);
-			//CPU0.loadText(0x00000008, noop);
-			CPU0.loadFile(0x00000000, "./main.bin");
-			CPU0.start();
+			this.addrbase = addrbase;
+			this.flags = flags;
+			this.memory = new byte[pagesize];
+		}
+
+		public byte readByte(UInt32 address) {
+			return memory[(address&pagemask)];
+		}
+
+		public void writeByte(UInt32 address, byte value) {
+			memory[(address&pagemask)] = value;
 		}
 	}
 }
+

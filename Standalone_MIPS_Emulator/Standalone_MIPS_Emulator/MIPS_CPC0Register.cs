@@ -85,8 +85,8 @@ namespace Standalone_MIPS_Emulator
 			const UInt32 mask = 0x1;
 
 			for (Int32 i=0; i<31; i++) {
-				bit1 = (byte)((this.register&(mask << i)) << i);
-				bit2 = (byte)((value&(mask << i)) << i);
+				bit1 = (byte)((this.register&(mask << i)) >> i);
+				bit2 = (byte)((value&(mask << i)) >> i);
 				if (bitfields[i] == REGBitRW.LOCKED) {
 					// Ignore
 					newvalue |= (bit1&mask);

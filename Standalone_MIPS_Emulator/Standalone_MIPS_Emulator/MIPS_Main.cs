@@ -30,7 +30,7 @@ namespace Standalone_MIPS_Emulator
 			//CPU0.loadText(0x00000000, addi);
 			//CPU0.loadText(0x00000004, beq);
 			//CPU0.loadText(0x00000008, noop);
-			CPU0.loadFile(0x00000000, "./main.bin");
+			CPU0.loadFile(0x00000000, "main.bin");
 			CPU0.start();
 		}
 	}
