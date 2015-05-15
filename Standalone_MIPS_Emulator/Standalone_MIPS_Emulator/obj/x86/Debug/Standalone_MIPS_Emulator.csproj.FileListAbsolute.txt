@@ -1,5 +1,0 @@
-Z:\Text\School\Spring 2015\Operating Systems\Standalone_MIPS_Emulator\Standalone_MIPS_Emulator\Standalone_MIPS_Emulator\bin\Debug\Standalone_MIPS_Emulator.exe
-Z:\Text\School\Spring 2015\Operating Systems\Standalone_MIPS_Emulator\Standalone_MIPS_Emulator\Standalone_MIPS_Emulator\bin\Debug\Standalone_MIPS_Emulator.pdb
-Z:\Text\School\Spring 2015\Operating Systems\Standalone_MIPS_Emulator\Standalone_MIPS_Emulator\Standalone_MIPS_Emulator\obj\x86\Debug\Standalone_MIPS_Emulator.csprojResolveAssemblyReference.cache
-Z:\Text\School\Spring 2015\Operating Systems\Standalone_MIPS_Emulator\Standalone_MIPS_Emulator\Standalone_MIPS_Emulator\obj\x86\Debug\Standalone_MIPS_Emulator.exe
-Z:\Text\School\Spring 2015\Operating Systems\Standalone_MIPS_Emulator\Standalone_MIPS_Emulator\Standalone_MIPS_Emulator\obj\x86\Debug\Standalone_MIPS_Emulator.pdb
