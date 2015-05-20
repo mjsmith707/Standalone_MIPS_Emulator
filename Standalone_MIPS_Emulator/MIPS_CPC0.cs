@@ -23,7 +23,6 @@ namespace Standalone_MIPS_Emulator
 
 		public MIPS_CPC0 ()
 		{
-			/*
 			// Initialize Registers
 			// Too easy to just have normal registers
 			// we have to deal with the sel field...
@@ -122,40 +121,176 @@ namespace Standalone_MIPS_Emulator
 			registerFile[11,7] = new MIPS_CPC0Register(0x0, 0x0, 0x0);
 
 			// Status Register
-			// reset: 00000000000000000000000000000000
-			// mask1: 
-			// mask2: 
-			registerFile[12,0] = new MIPS_CPC0Register();
-			registerFile[13,0] = new MIPS_CPC0Register();
-			registerFile[14,0] = new MIPS_CPC0Register();
-			registerFile[15,0] = new MIPS_CPC0Register();
-			registerFile[16,0] = new MIPS_CPC0Register();
-			registerFile[16,1] = new MIPS_CPC0Register();
-			registerFile[16,2] = new MIPS_CPC0Register();
-			registerFile[16,3] = new MIPS_CPC0Register();
-			registerFile[16,6] = new MIPS_CPC0Register();
-			registerFile[16,7] = new MIPS_CPC0Register();
-			registerFile[17,0] = new MIPS_CPC0Register();
-			registerFile[18,0] = new MIPS_CPC0Register();
-			registerFile[19,0] = new MIPS_CPC0Register();
-			registerFile[20,0] = new MIPS_CPC0Register();
-			registerFile[21,0] = new MIPS_CPC0Register();
-			registerFile[22,0] = new MIPS_CPC0Register();
-			registerFile[23,0] = new MIPS_CPC0Register();
-			registerFile[24,0] = new MIPS_CPC0Register();
-			registerFile[25,0] = new MIPS_CPC0Register();
-			registerFile[26,0] = new MIPS_CPC0Register();
-			registerFile[27,0] = new MIPS_CPC0Register();
-			registerFile[27,1] = new MIPS_CPC0Register();
-			registerFile[27,2] = new MIPS_CPC0Register();
-			registerFile[27,3] = new MIPS_CPC0Register();
-			registerFile[28,0] = new MIPS_CPC0Register();
-			registerFile[28,1] = new MIPS_CPC0Register();
-			registerFile[29,0] = new MIPS_CPC0Register();
-			registerFile[29,1] = new MIPS_CPC0Register();
-			registerFile[30,0] = new MIPS_CPC0Register();
-			registerFile[31,0] = new MIPS_CPC0Register();
-			*/
+			// reset: 00000000010000000000000000000100
+			// mask1: 11001110011110001111111100010111
+			// mask2: 11001010011110001111111100010111
+            registerFile[12,0] = new MIPS_CPC0Register(0x400004, 0xCE78FF17, 0xCA78FF17);
+
+            // Cause Register
+            // reset: 00000000000000000000000000000000
+            // mask1: 10110000110000001111111101111100
+            // mask2: 00000000110000000000001100000000
+			registerFile[13,0] = new MIPS_CPC0Register(0x0, 0xB0C0FF7C, 0xC00300);
+
+            // Exception Program Counter Register
+            // reset: 00000000000000000000000000000000
+            // mask1: 11111111111111111111111111111111
+            // mask2: 11111111111111111111111111111111
+            registerFile[14,0] = new MIPS_CPC0Register(0x0, 0xFFFFFFFF, 0xFFFFFFFF);
+
+            // Processor Identification Register
+            // No Opts, COMP_LEGACY, IMP_R3000, REV_R3000
+            // reset: 11111111000000000000001000100000
+            // mask1: 11111111111111111111111111111111
+            // mask2: 00000000000000000000000000000000
+            registerFile[15,0] = new MIPS_CPC0Register(0xFF000220, 0xFFFFFFFF, 0x0);
+
+            // Configuration Register 0
+            // reset: 10000000000000001000000010000000
+            // mask1: 10000000000000001111111110000111
+            // mask2: 00000000000000000000000000000111
+            registerFile[16,0] = new MIPS_CPC0Register(0x80008080, 0x8000FF87, 0x7);
+
+            // Configuration Register 1
+            // 64 TLB, 64 Icache, No Icache, Direct Mapped, 
+            // 64 Dcache, No Dcache, Direct Mapped
+            // No Coprocessor 2 (Yet)          -
+            // No Perf Counter, No Watch, No Code Comp, No EJTAG
+            // No FPU                                -
+            // reset: 00111111000000000000000000000000
+            // mask1: 11111111111111111111111111111111
+            // mask2: 00000000000000000000000000000000
+            registerFile[16,1] = new MIPS_CPC0Register(0x3F000000, 0xFFFFFFFF, 0x0);
+
+            // Configuration Register 2
+            // reset: 00000000000000000000000000000000
+            // mask1: 00000000000000000000000000000000
+            // mask2: 00000000000000000000000000000000
+			registerFile[16,2] = new MIPS_CPC0Register(0x0, 0x0, 0x0);
+
+            // Configuration Register 3
+            // reset: 00000000000000000000000000000000
+            // mask1: 00000000000000000000000000000000
+            // mask2: 00000000000000000000000000000000
+			registerFile[16,3] = new MIPS_CPC0Register(0x0, 0x0, 0x0);
+
+            // Reserved Register
+            // reset: 00000000000000000000000000000000
+            // mask1: 00000000000000000000000000000000
+            // mask2: 00000000000000000000000000000000
+			registerFile[16,6] = new MIPS_CPC0Register(0x0, 0x0, 0x0);
+
+            // Reserved Register
+            // reset: 00000000000000000000000000000000
+            // mask1: 00000000000000000000000000000000
+            // mask2: 00000000000000000000000000000000
+			registerFile[16,7] = new MIPS_CPC0Register(0x0, 0x0, 0x0);
+
+            // Load Linked Address Register
+            // reset: 00000000000000000000000000000000
+            // mask1: 11111111111111111111111111111111
+            // mask2: 00000000000000000000000000000000
+            registerFile[17,0] = new MIPS_CPC0Register(0x0, 0xFFFFFFFF, 0x0);
+
+            // WatchLo Register
+            // reset: 00000000000000000000000000000000
+            // mask1: 00000000000000000000000000000000
+            // mask2: 00000000000000000000000000000000
+			registerFile[18,0] = new MIPS_CPC0Register(0x0, 0x0, 0x0);
+
+            // WatchHi Register
+            // reset: 00000000000000000000000000000000
+            // mask1: 00000000000000000000000000000000
+            // mask2: 00000000000000000000000000000000
+			registerFile[19,0] = new MIPS_CPC0Register(0x0, 0x0, 0x0);
+
+            // XContext Register
+            // reset: 00000000000000000000000000000000
+            // mask1: 00000000000000000000000000000000
+            // mask2: 00000000000000000000000000000000
+			registerFile[20,0] = new MIPS_CPC0Register(0x0, 0x0, 0x0);
+
+            // Reserved Register
+            // reset: 00000000000000000000000000000000
+            // mask1: 00000000000000000000000000000000
+            // mask2: 00000000000000000000000000000000
+			registerFile[21,0] = new MIPS_CPC0Register(0x0, 0x0, 0x0);
+
+            // Reserved Register
+            // reset: 00000000000000000000000000000000
+            // mask1: 00000000000000000000000000000000
+            // mask2: 00000000000000000000000000000000
+			registerFile[22,0] = new MIPS_CPC0Register(0x0, 0x0, 0x0);
+
+            // EJTAG Debug Register
+            // reset: 00000000000000000000000000000000
+            // mask1: 00000000000000000000000000000000
+            // mask2: 00000000000000000000000000000000
+			registerFile[23,0] = new MIPS_CPC0Register(0x0, 0x0, 0x0);
+
+            // EJTAG DEPC Register
+            // reset: 00000000000000000000000000000000
+            // mask1: 00000000000000000000000000000000
+            // mask2: 00000000000000000000000000000000
+			registerFile[24,0] = new MIPS_CPC0Register(0x0, 0x0, 0x0);
+
+            // Performance Counter Register
+            // Unimplemented but will be eventually
+            // reset: 00000000000000000000000000000000
+            // mask1: 00000000000000000000000000000000
+            // mask2: 00000000000000000000000000000000
+			registerFile[25,0] = new MIPS_CPC0Register(0x0, 0x0, 0x0);
+
+            // ErrCtl Register
+            // reset: 00000000000000000000000000000000
+            // mask1: 00000000000000000000000000000000
+            // mask2: 00000000000000000000000000000000
+			registerFile[26,0] = new MIPS_CPC0Register(0x0, 0x0, 0x0);
+
+            // CacheErr Register
+            // reset: 00000000000000000000000000000000
+            // mask1: 00000000000000000000000000000000
+            // mask2: 00000000000000000000000000000000
+			registerFile[27,0] = new MIPS_CPC0Register(0x0, 0x0, 0x0);
+			registerFile[27,1] = new MIPS_CPC0Register(0x0, 0x0, 0x0);
+			registerFile[27,2] = new MIPS_CPC0Register(0x0, 0x0, 0x0);
+			registerFile[27,3] = new MIPS_CPC0Register(0x0, 0x0, 0x0);
+
+            // TagLo Register
+            // reset: 00000000000000000000000000000000
+            // mask1: 00000000000000000000000000000000
+            // mask2: 00000000000000000000000000000000
+			registerFile[28,0] = new MIPS_CPC0Register(0x0, 0x0, 0x0);
+
+            // DataLo Register
+            // reset: 00000000000000000000000000000000
+            // mask1: 00000000000000000000000000000000
+            // mask2: 00000000000000000000000000000000
+			registerFile[28,1] = new MIPS_CPC0Register(0x0, 0x0, 0x0);
+
+            // TagHi Register
+            // reset: 00000000000000000000000000000000
+            // mask1: 00000000000000000000000000000000
+            // mask2: 00000000000000000000000000000000
+			registerFile[29,0] = new MIPS_CPC0Register(0x0, 0x0, 0x0);
+
+            // DataHi Register
+            // reset: 00000000000000000000000000000000
+            // mask1: 00000000000000000000000000000000
+            // mask2: 00000000000000000000000000000000
+			registerFile[29,1] = new MIPS_CPC0Register(0x0, 0x0, 0x0);
+
+            // ErrorEPC Register
+            // reset: 00000000000000000000000000000000
+            // mask1: 11111111111111111111111111111111
+            // mask2: 11111111111111111111111111111111
+            registerFile[30,0] = new MIPS_CPC0Register(0x0, 0xFFFFFFFF, 0xFFFFFFFF);
+
+            // DESAVE Register
+            // reset: 00000000000000000000000000000000
+            // mask1: 00000000000000000000000000000000
+            // mask2: 00000000000000000000000000000000
+			registerFile[31,0] = new MIPS_CPC0Register(0x0, 0x0, 0x0);
 		}
 
 		public override UInt32 getRegister(byte register, byte sel)

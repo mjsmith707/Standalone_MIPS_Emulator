@@ -14,6 +14,7 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 using System;
 using System.Collections;
 using System.IO;
+using System.Runtime.CompilerServices; 
 
 // MIPS32R2 Instruction Formats
 // R-Type
@@ -48,7 +49,7 @@ namespace Standalone_MIPS_Emulator
 	public class MIPS_CPU
 	{
 		// Global Verbose Debugging
-		public const bool DEBUG_CPU = true;
+        public const bool DEBUG_CPU = true;
 
 		// Decoder Constants
 		private const UInt32 OPCODEMASK = 0xFC000000;
@@ -107,11 +108,11 @@ namespace Standalone_MIPS_Emulator
 			registerFile = new MIPS_Register[32];
 
 			// Mute r0
-			registerFile [0] = new MIPS_Register (0, true);
+			registerFile [0] = new MIPS_Register(0, true);
 
 			// Initialize Remaining Registers
 			for (int i = 1; i < 32; i++) {
-				registerFile[i] = new MIPS_Register ();
+				registerFile[i] = new MIPS_Register();
 			}
 
 			// Initialize SP/FP Values (for testing purposes)
@@ -218,12 +219,20 @@ namespace Standalone_MIPS_Emulator
 		}
 
 		// FDX Loop
+        // Needs execution cap
 		public void start() {
 			while (true) {
 				try {
 					if (DEBUG_CPU) {
 						printRegisters();
+                        Console.WriteLine("Cycle" + "    = {0}", cyclecount);
 					}
+                    /*
+                    if (cyclecount % 500000 == 0)
+                    {
+                        Console.WriteLine("Cycle" + "    = {0}", cyclecount);
+                    }
+                    */
 					fetch();
 					decode();
 					execute();
@@ -231,13 +240,15 @@ namespace Standalone_MIPS_Emulator
 				}
 				catch (Exception e) {
 					Console.WriteLine("Exception: " + e.Message);
+                    break;
 				}
 			}
 		}
 
 		// Fetch next instruction or execute branch
 		// During execution PC points to next instruction, not current.
-		public void fetch ()
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void fetch()
 		{
 			if (branch) {
 				branch = false;
@@ -251,7 +262,6 @@ namespace Standalone_MIPS_Emulator
 				}
 				this.PC.setValue(PC.getValue() + 4);
 			}
-
 			else {
 				this.IR.setValue(mainMemory.ReadWord(PC.getValue()));
 				if (DEBUG_CPU) {
@@ -269,6 +279,7 @@ namespace Standalone_MIPS_Emulator
 
 		// MIPS32 Decoder
 		// Decoded fields stored into context.
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public void decode() {
 			byte opcodec 	= (byte)((IR.getValue() & OPCODEMASK) >> OPCODESHIFT);
 			byte rs 		= (byte)((IR.getValue() & RSMASK) >> RSSHIFT);
@@ -294,18 +305,30 @@ namespace Standalone_MIPS_Emulator
 			}
 		}
 
-		// Execution
+		// Execution Caller
 		// For speed purposes, common arithmetic functions are in a separate
 		// jump table from the opcode table.
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public void execute() {
 			if (DEBUG_CPU) {
 				Console.WriteLine("==== Execute ====");
+                Console.WriteLine("=Disassembly=");
 			}
 
 			if (context.getOpcode() == 0) {
+                if (DEBUG_CPU) {
+                    Console.WriteLine("             INST      RS RT RD IMM JIMM SHAMT");
+                    Console.WriteLine("Instruction: {0}, {1}, {2}, {3}, {4}, {5}, {6}", funct[context.getFunct()].GetType().Name, context.getRS(), context.getRT(), context.getRD(), context.getImm(), context.getJimm(), context.getShamt());
+                }
+                
 				funct[context.getFunct()].execute(ref context);
 			}
 			else {
+                if (DEBUG_CPU) {
+                    Console.WriteLine("             INST      RS RT RD IMM JIMM SHAMT");
+                    Console.WriteLine("Instruction: {0}, {1}, {2}, {3}, {4}, {5}, {6}", opcode[context.getOpcode()].GetType().Name, context.getRS(), context.getRT(), context.getRD(), context.getImm(), context.getJimm(), context.getShamt());
+                }
+
 				opcode[context.getOpcode()].execute(ref context);
 			}
 		}
@@ -316,12 +339,13 @@ namespace Standalone_MIPS_Emulator
 		}
 
 		// Reads bare metal binary file into memory at address
+        // Needs a minor rewrite..
 		public void loadFile(UInt32 address, String filename) {
 			try {
 				using (BinaryReader reader = new BinaryReader(File.Open(filename, FileMode.Open))) {
 					uint count = 0;
 					byte[] array = new byte[4];
-					for (uint i=0; i<reader.BaseStream.Length; i++) {
+					for (uint i=0; i<=reader.BaseStream.Length; i++) {
 						if (count == 4) {
 							UInt32 word = byteArrayToUInt32(array);
 							Console.WriteLine("address: 0x{0:X}      = 0x{1:X}", address, word);
@@ -329,15 +353,17 @@ namespace Standalone_MIPS_Emulator
 							address += 4;
 							count = 0;
 						}
+                        if (i == reader.BaseStream.Length) {
+                            break;
+                        }
 						array[count] = reader.ReadByte();
 						count ++;
 					}
 				}
+                Console.WriteLine("File Loaded");
 			} catch (Exception e) {
 				Console.WriteLine("Error: " + e.Message);
 			}
-			Console.WriteLine("loaded");
-
 		}
 
 		// Unimplemented. Will eventually use ELFSharp for parsing?

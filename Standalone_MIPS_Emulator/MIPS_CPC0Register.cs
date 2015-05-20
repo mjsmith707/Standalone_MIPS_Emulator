@@ -77,7 +77,6 @@ namespace Standalone_MIPS_Emulator
 		// Writing to READ field is ignored
 		// Writing to LOCKED field is UNDEFINED by architecture
 		// but we'll just ignore it too.
-
 		public void setValue(UInt32 value) {
 			byte bit1 = 0;
 			byte bit2 = 0;

@@ -23,14 +23,14 @@ namespace Standalone_MIPS_Emulator
 		private Hashtable pagetable;
 		private const byte defaultflags = 0x0;
 
-		public MIPS_Memory ()
-		{
+		public MIPS_Memory () {
 			pagetable = new Hashtable();
 		}
 
 		private bool pageExists(UInt32 address) {
 			return pagetable.ContainsKey(address&0xFFFFF000);
 		}
+
 		public byte ReadByte(UInt32 address) {
 			if (!pageExists(address)) {
 				pagetable.Add(address&0xFFFFF000, new MIPS_MemoryPage(address, defaultflags));
