@@ -29,11 +29,6 @@ namespace Standalone_MIPS_Emulator
 			// and tons of other gotchas
 			// [registernum,selfield] rwmask1, rwmask2
 			// MIPS Arch Vol 3
-			//        00000000000000000000000000000000
-			// mask1: 10000000000000000000000000111111
-			// mask2: 00000000000000000000000000111111
-			// reset: 00000000000000000000000000000000
-
 			registerFile = new MIPS_CPC0Register[32,32];
 
 			// Index Register
@@ -54,15 +49,15 @@ namespace Standalone_MIPS_Emulator
 			// EntryLo0 Register, EntryLo1 Register
 			// reset: 00000000000000000000000000000000
 			// mask1: 11111111111111111111111111111111
-			// mask2: 01111111111111111111111111111111
-			registerFile[2,0] = new MIPS_CPC0Register(0x0, 0xFFFFFFFF, 0x7FFFFFFF);
-			registerFile[3,0] = new MIPS_CPC0Register(0x0, 0xFFFFFFFF, 0x7FFFFFFF);
+			// mask2: 00111111111111111111111111111111
+			registerFile[2,0] = new MIPS_CPC0Register(0x0, 0xFFFFFFFF, 0x3FFFFFFF);
+			registerFile[3,0] = new MIPS_CPC0Register(0x0, 0xFFFFFFFF, 0x3FFFFFFF);
 
 			// Context Register
 			// reset: 00000000000000000000000000000000
 			// mask1: 11111111111111111111111111110000
 			// mask2: 11111111100000000000000000000000
-			registerFile[4,0] = new MIPS_CPC0Register(0x0, 0xFFFFFFF0, 0xFF80000);
+            registerFile[4, 0] = new MIPS_CPC0Register(0x0, 0xFFFFFFF0, 0xFF800000);
 
 			// PageMask Register
 			// reset: 00000000000000000000000000000000

@@ -225,6 +225,7 @@ namespace Standalone_MIPS_Emulator
 				try {
 					if (DEBUG_CPU) {
 						printRegisters();
+                        printCPC0Registers();
                         Console.WriteLine("Cycle" + "    = {0}", cyclecount);
 					}
                     /*
@@ -366,9 +367,50 @@ namespace Standalone_MIPS_Emulator
 			}
 		}
 
-		// Unimplemented. Will eventually use ELFSharp for parsing?
-		public void elfLoader(UInt32 textaddress, UInt32 dataaddress, String filename) {
+		// ELFSharp-based loader
+        // Only does naive loading so far
+        // i.e. no relocation
+		public void elfLoader(String filename) {
+            var elfloader = ELFSharp.ELF.ELFReader.Load<uint>(filename);
+            foreach (var header in elfloader.Sections)
+            {
+                Console.WriteLine(header);
+            }
 
+            var textseg = elfloader.GetSection(".text");
+            var address = textseg.LoadAddress;
+
+            // Set Program Counter
+            PC.setValue(address);
+
+            Console.WriteLine("ELF Entry Point: 0x{0:X}", address);
+
+            // Load all Prog Sections
+            foreach (var section in elfloader.GetSections<ELFSharp.ELF.Sections.ProgBitsSection<uint>>()) {
+                if (section.LoadAddress == 0) {
+                    continue;
+                }
+                else {
+                    address = section.LoadAddress;
+                    Console.WriteLine("Section: {0}         0x{1:X}", section.Name ,address);
+                    uint count = 0;
+                    byte[] array = new byte[4];
+
+                    foreach (var inst in textseg.GetContents())
+                    {
+                        if (count == 4)
+                        {
+                            UInt32 word = byteArrayToUInt32(array);
+                            Console.WriteLine("address: 0x{0:X}      = 0x{1:X}", address, word);
+                            loadText(address, word);
+                            address += 4;
+                            count = 0;
+                        }
+                        array[count] = inst;
+                        count++;
+                    }
+                }
+            }
 		}
 
 		// No union support so here we are.
@@ -390,5 +432,57 @@ namespace Standalone_MIPS_Emulator
 			Console.WriteLine("%HI" + "      = 0x{0:X}", hi.getValue());
 			Console.WriteLine("%LO" + "      = 0x{0:X}", lo.getValue());
 		}
+
+        // Print out Coprocessor 0 Registers sadistically
+        public void printCPC0Registers()
+        {
+            Console.WriteLine("==== Coprocessor 0 Registers ====");
+            Console.WriteLine("Index    (0,0):      = 0x{0:X}", coprocessors[0].getRegister(0,0));
+            Console.WriteLine("Random   (1,0):      = 0x{0:X}", coprocessors[0].getRegister(1,0));
+            Console.WriteLine("EntryLo0 (2,0):      = 0x{0:X}", coprocessors[0].getRegister(2,0));
+            Console.WriteLine("EntryLo1 (3,0):      = 0x{0:X}", coprocessors[0].getRegister(3,0));
+            Console.WriteLine("Context  (4,0):      = 0x{0:X}", coprocessors[0].getRegister(4,0));
+            Console.WriteLine("PageMask (5,0):      = 0x{0:X}", coprocessors[0].getRegister(5,0));
+            Console.WriteLine("Wired    (6,0):      = 0x{0:X}", coprocessors[0].getRegister(6,0));
+            Console.WriteLine("RSVD     (7,0):      = 0x{0:X}", coprocessors[0].getRegister(7,0));
+            Console.WriteLine("BadVAddr (8,0):      = 0x{0:X}", coprocessors[0].getRegister(8,0));
+            Console.WriteLine("Count    (9,0):      = 0x{0:X}", coprocessors[0].getRegister(9,0));
+            Console.WriteLine("RSVD     (9,6):      = 0x{0:X}", coprocessors[0].getRegister(9,6));
+            Console.WriteLine("RSVD     (9,7):      = 0x{0:X}", coprocessors[0].getRegister(9,7));
+            Console.WriteLine("EntryHi  (10,0):     = 0x{0:X}", coprocessors[0].getRegister(10,0));
+            Console.WriteLine("Compare  (11,0):     = 0x{0:X}", coprocessors[0].getRegister(11,0));
+            Console.WriteLine("RSVD     (11,6):     = 0x{0:X}", coprocessors[0].getRegister(11,6));
+            Console.WriteLine("RSVD     (11,7):     = 0x{0:X}", coprocessors[0].getRegister(11,7));
+            Console.WriteLine("Status   (12,0):     = 0x{0:X}", coprocessors[0].getRegister(12,0));
+            Console.WriteLine("Cause    (13,0):     = 0x{0:X}", coprocessors[0].getRegister(13,0));
+            Console.WriteLine("EPCR     (14,0):     = 0x{0:X}", coprocessors[0].getRegister(14,0));
+            Console.WriteLine("ProcID   (15,0):     = 0x{0:X}", coprocessors[0].getRegister(15,0));
+            Console.WriteLine("ConfReg0 (16,0):     = 0x{0:X}", coprocessors[0].getRegister(16,0));
+            Console.WriteLine("ConfReg1 (16,1):     = 0x{0:X}", coprocessors[0].getRegister(16,1));
+            Console.WriteLine("ConfReg2 (16,2):     = 0x{0:X}", coprocessors[0].getRegister(16,2));
+            Console.WriteLine("ConfReg3 (16,3):     = 0x{0:X}", coprocessors[0].getRegister(16,3));
+            Console.WriteLine("RSVD     (16,6):     = 0x{0:X}", coprocessors[0].getRegister(16,6));
+            Console.WriteLine("RSVD     (16,7):     = 0x{0:X}", coprocessors[0].getRegister(16,7));
+            Console.WriteLine("LLAddr   (17,0):     = 0x{0:X}", coprocessors[0].getRegister(17,0));
+            Console.WriteLine("WatchLo  (18,0):     = 0x{0:X}", coprocessors[0].getRegister(18,0));
+            Console.WriteLine("WatchHi  (19,0):     = 0x{0:X}", coprocessors[0].getRegister(19,0));
+            Console.WriteLine("XContext (20,0):     = 0x{0:X}", coprocessors[0].getRegister(20,0));
+            Console.WriteLine("RSVD     (21,0):     = 0x{0:X}", coprocessors[0].getRegister(21,0));
+            Console.WriteLine("RSVD     (22,0):     = 0x{0:X}", coprocessors[0].getRegister(22,0));
+            Console.WriteLine("EJTAG DB (23,0):     = 0x{0:X}", coprocessors[0].getRegister(23,0));
+            Console.WriteLine("EJTAG DEPC(24,0):    = 0x{0:X}", coprocessors[0].getRegister(24,0));
+            Console.WriteLine("Perf Ctr (25,0):     = 0x{0:X}", coprocessors[0].getRegister(25,0));
+            Console.WriteLine("ErrCtl   (26,0):     = 0x{0:X}", coprocessors[0].getRegister(26,0));
+            Console.WriteLine("CacheErr0(27,0):     = 0x{0:X}", coprocessors[0].getRegister(27,0));
+            Console.WriteLine("CacheErr1(27,1):     = 0x{0:X}", coprocessors[0].getRegister(27,1));
+            Console.WriteLine("CacheErr2(27,2):     = 0x{0:X}", coprocessors[0].getRegister(27,2));
+            Console.WriteLine("CacheErr3(27,3):     = 0x{0:X}", coprocessors[0].getRegister(27,3));
+            Console.WriteLine("TagLo    (28,0):     = 0x{0:X}", coprocessors[0].getRegister(28,0));
+            Console.WriteLine("DataLo   (28,1):     = 0x{0:X}", coprocessors[0].getRegister(28,1));
+            Console.WriteLine("TagHi    (29,0):     = 0x{0:X}", coprocessors[0].getRegister(29,0));
+            Console.WriteLine("DataHi   (29,1):     = 0x{0:X}", coprocessors[0].getRegister(29,1));
+            Console.WriteLine("ErrorEPC (30,0):     = 0x{0:X}", coprocessors[0].getRegister(30,0));
+            Console.WriteLine("DESAVE   (31,0):     = 0x{0:X}", coprocessors[0].getRegister(31,0));
+        }
 	}
 }

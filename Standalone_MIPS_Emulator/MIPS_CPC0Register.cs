@@ -78,25 +78,29 @@ namespace Standalone_MIPS_Emulator
 		// Writing to LOCKED field is UNDEFINED by architecture
 		// but we'll just ignore it too.
 		public void setValue(UInt32 value) {
-			byte bit1 = 0;
-			byte bit2 = 0;
+			UInt32 bit1 = 0;
+			UInt32 bit2 = 0;
 			UInt32 newvalue = 0;
-			const UInt32 mask = 0x1;
-
-			for (Int32 i=0; i<31; i++) {
-				bit1 = (byte)((this.register&(mask << i)) << i);
-				bit2 = (byte)((value&(mask << i)) << i);
+			const UInt32 mask = 0x01;
+            
+			for (Int32 i=0; i<32; i++) {
+                UInt32 tmask = mask;
+                UInt32 tmask2 = tmask << i;
+                UInt32 temp3 = this.register & tmask2;
+                UInt32 temp4 = value & tmask2;
+                bit1 = (this.register&(mask << i));
+                bit2 = (value&(mask << i));
 				if (bitfields[i] == REGBitRW.LOCKED) {
 					// Ignore
-					newvalue |= (bit1&mask);
+                    newvalue |= bit1;
 				}
 				else if (bitfields[i] == REGBitRW.READ) {
 					// Ignore
-					newvalue |= (bit1&mask);
+                    newvalue |= bit1;
 				}
 				else if (bitfields[i] == REGBitRW.READWRITE) {
 					// Write Always
-					newvalue |= (bit2&mask);
+                    newvalue |= bit2;
 				}
 				else {
 					throw new ApplicationException("Invalid RWX Mask for CPC0 register during writing.");
