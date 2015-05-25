@@ -49,7 +49,7 @@ namespace Standalone_MIPS_Emulator
 	public class MIPS_CPU
 	{
 		// Global Verbose Debugging
-        public const bool DEBUG_CPU = true;
+        public const bool DEBUG_CPU = false;
 
 		// Decoder Constants
 		private const UInt32 OPCODEMASK = 0xFC000000;
@@ -228,12 +228,12 @@ namespace Standalone_MIPS_Emulator
                         printCPC0Registers();
                         Console.WriteLine("Cycle" + "    = {0}", cyclecount);
 					}
-                    /*
+                    
                     if (cyclecount % 500000 == 0)
                     {
                         Console.WriteLine("Cycle" + "    = {0}", cyclecount);
                     }
-                    */
+
 					fetch();
 					decode();
 					execute();
