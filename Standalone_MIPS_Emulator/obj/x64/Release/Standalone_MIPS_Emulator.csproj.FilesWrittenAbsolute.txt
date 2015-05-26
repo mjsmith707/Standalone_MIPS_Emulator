@@ -1,0 +1,4 @@
+/Users/msmith/Projects/Standalone_MIPS_Emulator/Standalone_MIPS_Emulator/obj/x64/Release/.NETFramework,Version=v4.5.1.AssemblyAttribute.cs
+/Users/msmith/Projects/Standalone_MIPS_Emulator/Standalone_MIPS_Emulator/bin/x64/Release/Standalone_MIPS_Emulator.exe
+/Users/msmith/Projects/Standalone_MIPS_Emulator/Standalone_MIPS_Emulator/obj/x64/Release/Standalone_MIPS_Emulator.exe
+/Users/msmith/Projects/Standalone_MIPS_Emulator/Standalone_MIPS_Emulator/bin/x64/Release/ELFSharp.dll

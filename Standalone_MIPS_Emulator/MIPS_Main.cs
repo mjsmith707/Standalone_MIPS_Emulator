@@ -12,20 +12,37 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 */
 
 using System;
+using System.Timers;
 
 namespace Standalone_MIPS_Emulator
 {
 	class MainClass
 	{
+		// Performance Timer
+		private static Timer perfTimer;
+
+		public static MIPS_CPU CPU0;
+
 		public static void Main (string[] args)
 		{
-			MIPS_CPU CPU0 = new MIPS_CPU();
+			CPU0 = new MIPS_CPU();
 			// 001000 00001 00010 00000 00000 001111
 
-			CPU0.loadFile(0x00000000, "cop0_test.bin");
+			CPU0.loadFile(0x00000000, "main3.bin");
             //CPU0.loadFile(0x400550, "a.bin");
             //CPU0.elfLoader("a.out");
+
+			perfTimer = new System.Timers.Timer(60000);
+			perfTimer.Elapsed += OnTimedEvent;
+			perfTimer.Enabled = true;
+
 			CPU0.start();
 		}
+
+		private static void OnTimedEvent(Object source, ElapsedEventArgs e)
+    	{
+        	Console.WriteLine("The Elapsed event was raised at {0}", e.SignalTime);
+			Console.WriteLine("Cycle" + "    = {0}", CPU0.cyclecount);
+    	}
 	}
 }

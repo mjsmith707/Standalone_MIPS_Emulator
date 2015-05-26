@@ -14,7 +14,8 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 using System;
 using System.Collections;
 using System.IO;
-using System.Runtime.CompilerServices; 
+using System.Runtime.CompilerServices;
+using System.Timers;
 
 // MIPS32R2 Instruction Formats
 // R-Type
@@ -79,7 +80,7 @@ namespace Standalone_MIPS_Emulator
 		private MIPS_Register IR;
 		private MIPS_Register hi;
 		private MIPS_Register lo;
-		private UInt64 cyclecount;
+		public UInt64 cyclecount;
 		private MIPS_Memory mainMemory;
 		private bool branch;
 		private MIPS_Boolean branchDelay;
@@ -221,6 +222,7 @@ namespace Standalone_MIPS_Emulator
 		// FDX Loop
         // Needs execution cap
 		public void start() {
+			
 			while (true) {
 				try {
 					if (DEBUG_CPU) {
@@ -228,12 +230,12 @@ namespace Standalone_MIPS_Emulator
                         printCPC0Registers();
                         Console.WriteLine("Cycle" + "    = {0}", cyclecount);
 					}
-                    
+                    /*
                     if (cyclecount % 500000 == 0)
                     {
                         Console.WriteLine("Cycle" + "    = {0}", cyclecount);
                     }
-
+                    */
 					fetch();
 					decode();
 					execute();
