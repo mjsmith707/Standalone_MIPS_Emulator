@@ -14,15 +14,14 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 using System;
 
 // MIPS Control Coprocessor 0
-// Not fully implemented
-namespace Standalone_MIPS_Emulator
-{
-	public class MIPS_CPC0 : MIPS_Coprocessor
-	{
+// Reasonably implemented
+namespace Standalone_MIPS_Emulator {
+	public class MIPS_CPC0 : MIPS_Coprocessor {
+        // 2D Register File
 		private MIPS_CPC0Register[,] registerFile;
 
-		public MIPS_CPC0 ()
-		{
+        // Default Constructor
+		public MIPS_CPC0 () {
 			// Initialize Registers
 			// Too easy to just have normal registers
 			// we have to deal with the sel field...
@@ -288,15 +287,16 @@ namespace Standalone_MIPS_Emulator
 			registerFile[31,0] = new MIPS_CPC0Register(0x0, 0x0, 0x0);
 		}
 
-		public override UInt32 getRegister(byte register, byte sel)
-		{
+		public override UInt32 getRegister(byte register, byte sel) {
 			return this.registerFile[register,sel].getValue();
 		}
 
-		public override void setRegister(byte register, byte sel, UInt32 value)
-		{
-			this.registerFile[register,sel].setValue(value);
+		public override void setRegister(byte register, byte sel, UInt32 value) {
+			this.registerFile[register,sel].setValue(value, false);
 		}
+        
+        public override void setRegisterHW(byte register, byte sel, UInt32 value) {
+            this.registerFile[register, sel].setValue(value, true);
+        }
 	}
 }
-

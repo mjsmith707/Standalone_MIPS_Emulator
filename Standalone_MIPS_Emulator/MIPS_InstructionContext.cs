@@ -13,6 +13,9 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 
 using System;
 
+// Instruction Context is a single object containing all necessary values in order
+// to properly execute an instruction and update the CPU.
+// It is the sole parameter to every InstructionSet object
 namespace Standalone_MIPS_Emulator
 {
 	public class MIPS_InstructionContext
@@ -34,6 +37,7 @@ namespace Standalone_MIPS_Emulator
 		private MIPS_Register branchTarget;
 		private MIPS_Coprocessor[] coprocessors;
 
+        // Parameterized Constructor
 		public MIPS_InstructionContext (ref MIPS_Memory memory, ref MIPS_Register[] regfile, ref MIPS_Register PC, ref MIPS_Register hi, ref MIPS_Register lo, ref MIPS_Register branchTarget, ref MIPS_Boolean branchDelay, ref MIPS_Coprocessor[] coprocessors)
 		{
 			this.mainMemory = memory;
@@ -53,6 +57,7 @@ namespace Standalone_MIPS_Emulator
 			this.coprocessors = coprocessors;
 		}
 
+        // Super-setter function
 		public void setContext(byte opcode, byte rs, byte rt, byte rd, byte shamt, byte funct, UInt16 imm, UInt32 jimm) {
 			this.opcode = opcode;
 			this.rs = rs;

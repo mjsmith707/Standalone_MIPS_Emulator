@@ -16,22 +16,27 @@ using System.Collections;
 
 // Basic memory system for testing
 // Does not support virtual memory.
-namespace Standalone_MIPS_Emulator
-{
-	public class MIPS_Memory
-	{
+namespace Standalone_MIPS_Emulator {
+	public class MIPS_Memory {
+
+        // Physical Frame Table
 		private Hashtable pagetable;
 		private const byte defaultflags = 0x0;
 
+        // Default Constructor
 		public MIPS_Memory () {
 			pagetable = new Hashtable();
 		}
 
+        // Checks if the frame table contains a given frame
 		private bool pageExists(UInt32 address) {
 			return pagetable.ContainsKey(address&0xFFFFF000);
 		}
 
+        // Read a single byte
 		public byte ReadByte(UInt32 address) {
+            // If the physical frame doesn't exist
+            // create a new one full of zeroes.
 			if (!pageExists(address)) {
 				pagetable.Add(address&0xFFFFF000, new MIPS_MemoryPage(address, defaultflags));
 			}
@@ -40,6 +45,7 @@ namespace Standalone_MIPS_Emulator
 			return page1.readByte(address);
 		}
 
+        // Read two bytes
 		public UInt16 ReadHalf(UInt32 address) {
 			UInt16 half = 0;
 
@@ -50,6 +56,7 @@ namespace Standalone_MIPS_Emulator
 			return half;
 		}
 
+        // Read four bytes
 		public UInt32 ReadWord(UInt32 address) {
 			UInt32 word = 0;
 
@@ -64,7 +71,10 @@ namespace Standalone_MIPS_Emulator
 			return word;
 		}
 
+        // Store a single byte
 		public void StoreByte(UInt32 address, byte value) {
+            // If the physical frame doesn't exist
+            // create a new one.
 			if (!pageExists(address)) {
 				pagetable.Add(address&0xFFFFF000, new MIPS_MemoryPage(address, defaultflags));
 			}
@@ -73,11 +83,13 @@ namespace Standalone_MIPS_Emulator
 			page1.writeByte(address, value);
 		}
 
+        // Store two bytes
 		public void StoreHalf(UInt32 address, UInt16 value) {
 			StoreByte(address, (byte)(value >> 8));
 			StoreByte(address+1, (byte)(value));
 		}
 
+        // Store four bytes
 		public void StoreWord(UInt32 address, UInt32 value) {
 			StoreByte(address, (byte)(value >> 24));
 			StoreByte(address+1, (byte)(value >> 16));

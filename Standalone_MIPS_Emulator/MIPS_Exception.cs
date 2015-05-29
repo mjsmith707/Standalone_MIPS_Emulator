@@ -14,23 +14,25 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 using System;
 
 // Implements MIPS Machine Specific Exceptions
-namespace Standalone_MIPS_Emulator
-{
+namespace Standalone_MIPS_Emulator {
 	// Might be useful http://www.eecs.harvard.edu/~dholland/os161/documentation/sys161/mips.html
-	public class MIPS_Exception : Exception
-	{
+	public class MIPS_Exception : Exception {
+        // CPU Exception Codes Enumeration
 		public enum ExceptionCode {
 			INT, MOD, TLBL, TLBS, ADDRL, ADDRS, IBUS,
 			DBUS, SYSCALL, BKPT, RI, CPU, OVF, Reserved13,
 			Reserved14, Reserved15, UNIMPLEMENTED
 		};
 
+        // Stored Exception Code
 		private ExceptionCode code;
 
+        // Parameterized Constructor
 		public MIPS_Exception(ExceptionCode code) {
 			this.code = code;
 		}
 
+        // Public code accessor
 		public ExceptionCode getCode(){
 			return this.code;
 		}

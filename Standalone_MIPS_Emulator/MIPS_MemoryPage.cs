@@ -15,10 +15,8 @@ using System;
 
 // Basic paged memory. 
 // Will need complete rewrite for virtual memory support
-namespace Standalone_MIPS_Emulator
-{
-	public class MIPS_MemoryPage
-	{
+namespace Standalone_MIPS_Emulator {
+	public class MIPS_MemoryPage {
 		// 4096 Byte Page Size
 		private const UInt32 pagesize = 0x00001000;
 		private const UInt32 pagemask = 0x00000FFF;
@@ -28,8 +26,7 @@ namespace Standalone_MIPS_Emulator
 		private byte flags;
 		private byte[] memory;
 
-		public MIPS_MemoryPage (UInt32 addrbase, byte flags)
-		{
+		public MIPS_MemoryPage (UInt32 addrbase, byte flags) {
 			this.addrbase = addrbase;
 			this.flags = flags;
 			this.memory = new byte[pagesize];
@@ -44,4 +41,3 @@ namespace Standalone_MIPS_Emulator
 		}
 	}
 }
-

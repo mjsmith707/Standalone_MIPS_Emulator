@@ -14,23 +14,27 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 using System;
 
 // Implements the particularlities of Coprocessor0's registers
-namespace Standalone_MIPS_Emulator
-{
-	public class MIPS_CPC0Register
-	{
+namespace Standalone_MIPS_Emulator {
+	public class MIPS_CPC0Register {
+        // RWX Bit Enumeration
 		private enum REGBitRW {
 			LOCKED = 0,
 			READ = 1 , 
 			READWRITE = 2
 		};
 
+        // Register RWX Mask array
 		private REGBitRW[] bitfields;
+
+        // Integer Register
 		private UInt32 register;
 
+        // Default Constructor
 		public MIPS_CPC0Register() {
 			this.bitfields = new REGBitRW[32];
 		}
 
+        // Parameterized Constructor
 		public MIPS_CPC0Register(UInt32 value, UInt32 mask1, UInt32 mask2) {
 			this.register = value;
 			this.bitfields = new REGBitRW[32];
@@ -74,37 +78,48 @@ namespace Standalone_MIPS_Emulator
 		}
 
 		// Need to honor the RW Mask array.
-		// Writing to READ field is ignored
+        // Hardware can Write to READ bits but not LOCKED
+		// Software can Write to READWRITE bits but not LOCKED or READ
 		// Writing to LOCKED field is UNDEFINED by architecture
 		// but we'll just ignore it too.
-		public void setValue(UInt32 value) {
-			UInt32 bit1 = 0;
-			UInt32 bit2 = 0;
-			UInt32 newvalue = 0;
-			const UInt32 mask = 0x01;
-            
-			for (Int32 i=0; i<32; i++) {
-                bit1 = (this.register&(mask << i));
-                bit2 = (value&(mask << i));
-				if (bitfields[i] == REGBitRW.LOCKED) {
-					// Ignore
-                    newvalue |= bit1;
-				}
-				else if (bitfields[i] == REGBitRW.READ) {
-					// Ignore
-                    newvalue |= bit1;
-				}
-				else if (bitfields[i] == REGBitRW.READWRITE) {
-					// Write Always
-                    newvalue |= bit2;
-				}
-				else {
-					throw new ApplicationException("Invalid RWX Mask for CPC0 register during writing.");
-				}
-			}
+		public void setValue(UInt32 value, bool hwmode) {
+            UInt32 bit1 = 0;
+            UInt32 bit2 = 0;
+            UInt32 newvalue = 0;
+            const UInt32 mask = 0x01;
 
+            // Read each bit and compare to their bitfield mask value
+            // If permissible. Modify the newvalue.
+            // bit1 is the current bit in the register
+            // bit2 is the current bit in the parameter
+            for (Int32 i = 0; i < 32; i++) {
+                bit1 = (this.register & (mask << i));
+                bit2 = (value & (mask << i));
+                if (bitfields[i] == REGBitRW.LOCKED) {
+                    // Ignore
+                    newvalue |= bit1;
+                }
+                else if (bitfields[i] == REGBitRW.READ) {
+                    if(hwmode) {
+                        // Hardware Writable
+                        newvalue |= bit2;
+                    }
+                    else {
+                        // Ignore
+                        newvalue |= bit1;
+                    }
+                }
+                else if (bitfields[i] == REGBitRW.READWRITE) {
+                    // Write Always
+                    newvalue |= bit2;
+                }
+                else {
+                    throw new ApplicationException("Invalid RWX Mask for CPC0 register during writing.");
+                }
+            }
+
+            // Update Register Value
 			this.register = newvalue;
 		}
 	}
 }
-

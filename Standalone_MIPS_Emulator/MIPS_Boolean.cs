@@ -14,23 +14,25 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 using System;
 
 // Bool wrapper class to allow referencing
-namespace Standalone_MIPS_Emulator
-{
-	public class MIPS_Boolean
-	{
+namespace Standalone_MIPS_Emulator {
+	public class MIPS_Boolean {
+
+        // Private boolean value
 		private bool value;
-		public MIPS_Boolean (bool value)
-		{
+
+        // Parameterized Constructor
+		public MIPS_Boolean (bool value) {
 			this.value = value;
 		}
 
+        // Public Getter
 		public bool getValue() {
 			return this.value;
 		}
 
+        // Public Setter
 		public void setValue(bool value) {
 			this.value = value;
 		}
 	}
 }
-

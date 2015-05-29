@@ -1,0 +1,3 @@
+*.cache
+*.exe
+Standalone_MIPS_Emulator/bin/x64/Debug/ELFSharp.dll

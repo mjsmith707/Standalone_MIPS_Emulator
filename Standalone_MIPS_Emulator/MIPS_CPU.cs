@@ -46,10 +46,8 @@ using System.Timers;
 // opcode 	0xFC000000
 // jimm		0x3FFFFFF
 
-namespace Standalone_MIPS_Emulator
-{
-	public class MIPS_CPU
-	{
+namespace Standalone_MIPS_Emulator {
+	public class MIPS_CPU {
 		// Global Verbose Debugging
         public const bool DEBUG_CPU = true;
 
@@ -90,8 +88,8 @@ namespace Standalone_MIPS_Emulator
 		// Interrupt/Exception Stuff
 		private ConcurrentQueue<MIPS_Exception> interrupts;
 
-		public MIPS_CPU()
-		{
+        // Default Constructor
+		public MIPS_CPU() {
 			cyclecount = 0;
 
 			// Initialize Special Registers
@@ -138,6 +136,7 @@ namespace Standalone_MIPS_Emulator
 		}
 
 		// MIPS32 Architecture For Programmers Volume II: The MIPS32 Instruction Set
+        // Initialize Jump Tables
 		private void initialize_InstructionSet() {
 			// Register Encoded Instructions (AKA Funct/SPECIAL)
 			funct = new MIPS_Instruction[64];
@@ -232,20 +231,26 @@ namespace Standalone_MIPS_Emulator
 			while (true) {
 				try {
 					if (DEBUG_CPU) {
-						printRegisters();
+                        Console.WriteLine("");
+                        Console.WriteLine("Cycle" + "    = {0}", cyclecount);
+						printGPRRegisters();
                         printCPC0Registers();
-                        Console.WriteLine("Cycle" + "    = {0}", cyclecount);
 					}
-                    /*
-                    else if (cyclecount % 500000 == 0) {
-                        Console.WriteLine("Cycle" + "    = {0}", cyclecount);
-                    }
-                    */
 
+                    // Service a pending interrupt (if any)
 					serviceints();
+
+                    // Fetch next instruction
 					fetch();
+
+                    // Decode instruction
 					decode();
+
+                    // Execute instruction
 					execute();
+
+                    // Update cycle counter
+                    // This is _not_ a cop0 performance counter
 					cyclecount++;
 				}
                 catch (MIPS_Exception e) {
@@ -254,6 +259,8 @@ namespace Standalone_MIPS_Emulator
 					interrupts.Enqueue(e);
                 }
 				catch (Exception e) {
+                    // Simulation Error
+                    // Stop FDX Loop
 					Console.WriteLine("Exception: " + e.Message);
                     break;
 				}
@@ -269,7 +276,8 @@ namespace Standalone_MIPS_Emulator
 			if (interrupts.TryDequeue(out e)) {
 				Console.WriteLine("serviceint caught exception");
 				Console.WriteLine(e.Message);
-			} else {
+			} 
+            else {
 				return;
 			}
         }
@@ -279,28 +287,43 @@ namespace Standalone_MIPS_Emulator
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void fetch()
 		{
+            // Instruction in branch delay slot was executed.
+            // Now execute the branch itself.
 			if (branch) {
+                // Reset Branch Controls
 				branch = false;
 				branchDelay.setValue(false);
+
+                // Update Program Counter to Branch Target
 				this.PC.setValue(branchTarget.getValue());
+                // Update Instruction Register
 				this.IR.setValue(mainMemory.ReadWord(PC.getValue()));
+
 				if (DEBUG_CPU) {
 					Console.WriteLine("==== Fetch ====");
 					Console.WriteLine("PC     = 0x{0:X}", PC.getValue ());
 					Console.WriteLine("IR     = 0x{0:X}", IR.getValue());
 				}
+
+                // Advance Program Counter
 				this.PC.setValue(PC.getValue() + 4);
 			}
 			else {
+                // Update Instruction Register
 				this.IR.setValue(mainMemory.ReadWord(PC.getValue()));
+
 				if (DEBUG_CPU) {
 					Console.WriteLine("==== Fetch ====");
 					Console.WriteLine("PC     = 0x{0:X}", PC.getValue ());
 					Console.WriteLine("IR     = 0x{0:X}", IR.getValue());
 				}
+
+                // Advance Program Counter
 				this.PC.setValue(PC.getValue() + 4);
 			}
-				
+			
+            // Branch Instruction was executed.
+            // Next time around, execute the branch.
 			if (branchDelay.getValue()) {
 				branch = true;
 			}
@@ -310,6 +333,7 @@ namespace Standalone_MIPS_Emulator
 		// Decoded fields stored into context.
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public void decode() {
+            // Slice up current value in Instruction Register
 			byte opcodec 	= (byte)((IR.getValue() & OPCODEMASK) >> OPCODESHIFT);
 			byte rs 		= (byte)((IR.getValue() & RSMASK) >> RSSHIFT);
 			byte rt 		= (byte)((IR.getValue() & RTMASK) >> RTSHIFT);
@@ -319,6 +343,7 @@ namespace Standalone_MIPS_Emulator
 			UInt16 imm 		= (UInt16)((IR.getValue() & IMMMASK) >> IMMSHIFT);
 			UInt32 jimm 	= (UInt32)((IR.getValue() & JIMMMASK) >> JIMMSHIFT);
 
+            // Store into the Instruction Context
 			context.setContext(opcodec, rs, rt, rd, shamt, functc, imm, jimm);
 
 			if (DEBUG_CPU) {
@@ -344,12 +369,14 @@ namespace Standalone_MIPS_Emulator
                 Console.WriteLine("=Disassembly=");
 			}
 
+            // All Funct/SPECIAL instructions have an opcode of 0
 			if (context.getOpcode() == 0) {
                 if (DEBUG_CPU) {
                     Console.WriteLine("             INST      RS RT RD IMM JIMM SHAMT");
                     Console.WriteLine("Instruction: {0}, {1}, {2}, {3}, {4}, {5}, {6}", funct[context.getFunct()].GetType().Name, context.getRS(), context.getRT(), context.getRD(), context.getImm(), context.getJimm(), context.getShamt());
                 }
                 
+                // Execute Funct
 				funct[context.getFunct()].execute(ref context);
 			}
 			else {
@@ -358,6 +385,7 @@ namespace Standalone_MIPS_Emulator
                     Console.WriteLine("Instruction: {0}, {1}, {2}, {3}, {4}, {5}, {6}", opcode[context.getOpcode()].GetType().Name, context.getRS(), context.getRT(), context.getRD(), context.getImm(), context.getJimm(), context.getShamt());
                 }
 
+                // Execute Opcode
 				opcode[context.getOpcode()].execute(ref context);
 			}
 		}
@@ -368,7 +396,6 @@ namespace Standalone_MIPS_Emulator
 		}
 
 		// Reads bare metal binary file into memory at address
-        // Needs a minor rewrite..
 		public void loadFile(UInt32 address, String filename) {
 			try {
 				using (BinaryReader reader = new BinaryReader(File.Open(filename, FileMode.Open))) {
@@ -402,8 +429,7 @@ namespace Standalone_MIPS_Emulator
         // i.e. no relocation
 		public void elfLoader(String filename) {
             var elfloader = ELFSharp.ELF.ELFReader.Load<uint>(filename);
-            foreach (var header in elfloader.Sections)
-            {
+            foreach (var header in elfloader.Sections) {
                 Console.WriteLine(header);
             }
 
@@ -460,19 +486,47 @@ namespace Standalone_MIPS_Emulator
 			return word;
 		}
 
-		// Print out all GPRs and HI/LO Registers
-		public void printRegisters() {
+		// Print out all GPRs and HI/LO Registers sadistically
+		public void printGPRRegisters() {
 			Console.WriteLine("==== Register File ====");
-			for (uint i=0; i<32; i++) {
-				Console.WriteLine("%r" + i + "     = 0x{0:X}", registerFile[i].getValue());
-			}
-			Console.WriteLine("%HI" + "      = 0x{0:X}", hi.getValue());
-			Console.WriteLine("%LO" + "      = 0x{0:X}", lo.getValue());
+            Console.WriteLine("$zero (r0):     = 0x{0:X}", registerFile[0].getValue());
+            Console.WriteLine("$at   (r1):     = 0x{0:X}", registerFile[1].getValue());
+            Console.WriteLine("$v0   (r2):     = 0x{0:X}", registerFile[2].getValue());
+            Console.WriteLine("$v1   (r3):     = 0x{0:X}", registerFile[3].getValue());
+            Console.WriteLine("$a0   (r4):     = 0x{0:X}", registerFile[4].getValue());
+            Console.WriteLine("$a1   (r5):     = 0x{0:X}", registerFile[5].getValue());
+            Console.WriteLine("$a2   (r6):     = 0x{0:X}", registerFile[6].getValue());
+            Console.WriteLine("$a3   (r7):     = 0x{0:X}", registerFile[7].getValue());
+            Console.WriteLine("$t0   (r8):     = 0x{0:X}", registerFile[8].getValue());
+            Console.WriteLine("$t1   (r9):     = 0x{0:X}", registerFile[9].getValue());
+            Console.WriteLine("$t2   (r10):    = 0x{0:X}", registerFile[10].getValue());
+            Console.WriteLine("$t3   (r11):    = 0x{0:X}", registerFile[11].getValue());
+            Console.WriteLine("$t4   (r12):    = 0x{0:X}", registerFile[12].getValue());
+            Console.WriteLine("$t5   (r13):    = 0x{0:X}", registerFile[13].getValue());
+            Console.WriteLine("$t6   (r14):    = 0x{0:X}", registerFile[14].getValue());
+            Console.WriteLine("$t7   (r15):    = 0x{0:X}", registerFile[15].getValue());
+            Console.WriteLine("$s0   (r16):    = 0x{0:X}", registerFile[16].getValue());
+            Console.WriteLine("$s1   (r17):    = 0x{0:X}", registerFile[17].getValue());
+            Console.WriteLine("$s2   (r18):    = 0x{0:X}", registerFile[18].getValue());
+            Console.WriteLine("$s3   (r19):    = 0x{0:X}", registerFile[19].getValue());
+            Console.WriteLine("$s4   (r20):    = 0x{0:X}", registerFile[20].getValue());
+            Console.WriteLine("$s5   (r21):    = 0x{0:X}", registerFile[21].getValue());
+            Console.WriteLine("$s6   (r22):    = 0x{0:X}", registerFile[22].getValue());
+            Console.WriteLine("$s7   (r23):    = 0x{0:X}", registerFile[23].getValue());
+            Console.WriteLine("$t8   (r24):    = 0x{0:X}", registerFile[24].getValue());
+            Console.WriteLine("$t9   (r25):    = 0x{0:X}", registerFile[25].getValue());
+            Console.WriteLine("$k0   (r26):    = 0x{0:X}", registerFile[26].getValue());
+            Console.WriteLine("$k1   (r27):    = 0x{0:X}", registerFile[27].getValue());
+            Console.WriteLine("$gp   (r28):    = 0x{0:X}", registerFile[28].getValue());
+            Console.WriteLine("$sp   (r29):    = 0x{0:X}", registerFile[29].getValue());
+            Console.WriteLine("$s8   (r30):    = 0x{0:X}", registerFile[30].getValue());
+            Console.WriteLine("$ra   (r31):    = 0x{0:X}", registerFile[31].getValue());
+			Console.WriteLine("$HI             = 0x{0:X}", hi.getValue());
+			Console.WriteLine("$LO             = 0x{0:X}", lo.getValue());
 		}
 
         // Print out Coprocessor 0 Registers sadistically
-        public void printCPC0Registers()
-        {
+        public void printCPC0Registers() {
             Console.WriteLine("==== Coprocessor 0 Registers ====");
             Console.WriteLine("Index    (0,0):      = 0x{0:X}", coprocessors[0].getRegister(0,0));
             Console.WriteLine("Random   (1,0):      = 0x{0:X}", coprocessors[0].getRegister(1,0));

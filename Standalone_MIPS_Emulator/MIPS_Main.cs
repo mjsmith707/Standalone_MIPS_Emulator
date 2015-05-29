@@ -14,22 +14,20 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 using System;
 using System.Timers;
 
-namespace Standalone_MIPS_Emulator
-{
-	class MainClass
-	{
+namespace Standalone_MIPS_Emulator {
+	class MainClass {
 		// Performance Timer
 		private static Timer perfTimer;
         private static UInt64 lastCount;
 
 		public static MIPS_CPU CPU0;
 
-		public static void Main (string[] args)
-		{
+		public static void Main (string[] args) {
 			CPU0 = new MIPS_CPU();
 			// 001000 00001 00010 00000 00000 001111
 
-			CPU0.loadFile(0x00000000, "cop0_test.bin");
+			//CPU0.loadFile(0x00000000, "cop0_test.bin");
+            CPU0.loadFile(0x00000000, "registerload_test.bin");
             //CPU0.loadFile(0x400550, "a.bin");
             //CPU0.elfLoader("a.out");
 
@@ -41,8 +39,7 @@ namespace Standalone_MIPS_Emulator
 			CPU0.start();
 		}
 
-		private static void cycleSnapshotOnTrigger(Object source, ElapsedEventArgs e)
-    	{
+		private static void cycleSnapshotOnTrigger(Object source, ElapsedEventArgs e) {
             UInt64 count = CPU0.cyclecount;
             double IPS = (count - lastCount) / 60;
             double MIPS = IPS / 1000000;
