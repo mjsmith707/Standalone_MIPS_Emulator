@@ -22,7 +22,7 @@ namespace Standalone_MIPS_Emulator
 		public enum ExceptionCode {
 			INT, MOD, TLBL, TLBS, ADDRL, ADDRS, IBUS,
 			DBUS, SYSCALL, BKPT, RI, CPU, OVF, Reserved13,
-			Reserved14, Reserved15
+			Reserved14, Reserved15, UNIMPLEMENTED
 		};
 
 		private ExceptionCode code;

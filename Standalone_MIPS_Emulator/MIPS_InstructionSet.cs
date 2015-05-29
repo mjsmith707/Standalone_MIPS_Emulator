@@ -162,21 +162,21 @@ namespace Standalone_MIPS_Emulator
 	public class MIPS_SYSCALL : MIPS_Instruction
 	{
 		public override void execute(ref MIPS_InstructionContext context) {
-
+            throw new MIPS_Exception(MIPS_Exception.ExceptionCode.UNIMPLEMENTED);
 		}
 	}
 
 	public class MIPS_BREAK : MIPS_Instruction
 	{
 		public override void execute(ref MIPS_InstructionContext context) {
-            throw new MIPS_Exception(MIPS_Exception.ExceptionCode.BKPT);
+            throw new MIPS_Exception(MIPS_Exception.ExceptionCode.UNIMPLEMENTED);
 		}
 	}
 
 	public class MIPS_SYNC : MIPS_Instruction
 	{
 		public override void execute(ref MIPS_InstructionContext context) {
-
+            throw new MIPS_Exception(MIPS_Exception.ExceptionCode.UNIMPLEMENTED);
 		}
 	}
 
@@ -279,6 +279,14 @@ namespace Standalone_MIPS_Emulator
 					base.signExtend32(context.getRegisters()[context.getRT()].getValue())));
 			}
 			catch (System.OverflowException) {
+                // Rerun unchecked
+                // FIXME: Is this correct behavior?
+                context.getRegisters()[context.getRD()].setValue((UInt32)unchecked(
+                    base.signExtend32(context.getRegisters()[context.getRS()].getValue())
+                    +
+                    base.signExtend32(context.getRegisters()[context.getRT()].getValue())));
+
+                // Trigger exception
 				throw new MIPS_Exception(MIPS_Exception.ExceptionCode.OVF);
 			}
 		}
@@ -306,6 +314,14 @@ namespace Standalone_MIPS_Emulator
 					base.signExtend32(context.getRegisters()[context.getRT()].getValue())));
 			}
 			catch (System.OverflowException) {
+                // Rerun unchecked
+                // FIXME: Is this correct behavior?
+                context.getRegisters()[context.getRD()].setValue((UInt32)unchecked(
+                    base.signExtend32(context.getRegisters()[context.getRS()].getValue())
+                    -
+                    base.signExtend32(context.getRegisters()[context.getRT()].getValue())));
+
+                // Trigger Exception
 				throw new MIPS_Exception(MIPS_Exception.ExceptionCode.INT);
 			}
 		}
@@ -391,42 +407,42 @@ namespace Standalone_MIPS_Emulator
 	public class MIPS_TGE : MIPS_Instruction
 	{
 		public override void execute(ref MIPS_InstructionContext context) {
-
+            throw new MIPS_Exception(MIPS_Exception.ExceptionCode.UNIMPLEMENTED);
 		}
 	}
 
 	public class MIPS_TGEU : MIPS_Instruction
 	{
 		public override void execute(ref MIPS_InstructionContext context) {
-
+            throw new MIPS_Exception(MIPS_Exception.ExceptionCode.UNIMPLEMENTED);
 		}
 	}
 
 	public class MIPS_TLT : MIPS_Instruction
 	{
 		public override void execute(ref MIPS_InstructionContext context) {
-
+            throw new MIPS_Exception(MIPS_Exception.ExceptionCode.UNIMPLEMENTED);
 		}
 	}
 
 	public class MIPS_TLTU : MIPS_Instruction
 	{
 		public override void execute(ref MIPS_InstructionContext context) {
-
+            throw new MIPS_Exception(MIPS_Exception.ExceptionCode.UNIMPLEMENTED);
 		}
 	}
 
 	public class MIPS_TEQ : MIPS_Instruction
 	{
 		public override void execute(ref MIPS_InstructionContext context) {
-
+            throw new MIPS_Exception(MIPS_Exception.ExceptionCode.UNIMPLEMENTED);
 		}
 	}
 
 	public class MIPS_TNE : MIPS_Instruction
 	{
 		public override void execute(ref MIPS_InstructionContext context) {
-
+            throw new MIPS_Exception(MIPS_Exception.ExceptionCode.UNIMPLEMENTED);
 		}
 	}
 
@@ -592,6 +608,14 @@ namespace Standalone_MIPS_Emulator
 					base.signExtend32(context.getImm())));
 			}
 			catch (System.OverflowException) {
+                // Rerun unchecked
+                // FIXME: Is this correct behavior?
+                context.getRegisters()[context.getRT()].setValue((UInt32)unchecked(
+                    base.signExtend32(context.getRegisters()[context.getRS()].getValue())
+                    +
+                    base.signExtend32(context.getImm())));
+
+                // Trigger Exception
 				throw new MIPS_Exception(MIPS_Exception.ExceptionCode.OVF);
 			}
 		}
@@ -604,6 +628,7 @@ namespace Standalone_MIPS_Emulator
 			UInt32 result = context.getRegisters()[context.getRS()].getValue();
 			result += (UInt32)base.signExtend16(context.getImm());
 			context.getRegisters()[context.getRT()].setValue(result);
+            // FIXME: Overflow
 		}
 	}
 
@@ -697,6 +722,9 @@ namespace Standalone_MIPS_Emulator
 					context.getCoprocessors()[0].setRegister(context.getRD(), sel, value);
 					break;
 				}
+                default: {
+                    throw new MIPS_Exception(MIPS_Exception.ExceptionCode.CPU);
+                }
 			}
 		}
 	}
@@ -704,14 +732,14 @@ namespace Standalone_MIPS_Emulator
 	public class MIPS_COP1 : MIPS_Instruction
 	{
 		public override void execute(ref MIPS_InstructionContext context) {
-
+            throw new MIPS_Exception(MIPS_Exception.ExceptionCode.UNIMPLEMENTED);
 		}
 	}
 
 	public class MIPS_COP2 : MIPS_Instruction
 	{
 		public override void execute(ref MIPS_InstructionContext context) {
-
+            throw new MIPS_Exception(MIPS_Exception.ExceptionCode.UNIMPLEMENTED);
 		}
 	}
 
@@ -757,7 +785,7 @@ namespace Standalone_MIPS_Emulator
 	public class MIPS_SPECIAL2 : MIPS_Instruction
 	{
 		public override void execute(ref MIPS_InstructionContext context) {
-
+            throw new MIPS_Exception(MIPS_Exception.ExceptionCode.UNIMPLEMENTED);
 		}
 	}
 
@@ -797,7 +825,7 @@ namespace Standalone_MIPS_Emulator
 	public class MIPS_LWL : MIPS_Instruction
 	{
 		public override void execute(ref MIPS_InstructionContext context) {
-
+            throw new MIPS_Exception(MIPS_Exception.ExceptionCode.UNIMPLEMENTED);
 		}
 	}
 
@@ -838,7 +866,7 @@ namespace Standalone_MIPS_Emulator
 	public class MIPS_LWR : MIPS_Instruction
 	{
 		public override void execute(ref MIPS_InstructionContext context) {
-
+            throw new MIPS_Exception(MIPS_Exception.ExceptionCode.UNIMPLEMENTED);
 		}
 	}
 
@@ -865,7 +893,7 @@ namespace Standalone_MIPS_Emulator
 	public class MIPS_SWL : MIPS_Instruction
 	{
 		public override void execute(ref MIPS_InstructionContext context) {
-
+            throw new MIPS_Exception(MIPS_Exception.ExceptionCode.UNIMPLEMENTED);
 		}
 	}
 
@@ -882,63 +910,63 @@ namespace Standalone_MIPS_Emulator
 	public class MIPS_SWR : MIPS_Instruction
 	{
 		public override void execute(ref MIPS_InstructionContext context) {
-
+            throw new MIPS_Exception(MIPS_Exception.ExceptionCode.UNIMPLEMENTED);
 		}
 	}
 
 	public class MIPS_CACHE : MIPS_Instruction
 	{
 		public override void execute(ref MIPS_InstructionContext context) {
-
+            throw new MIPS_Exception(MIPS_Exception.ExceptionCode.UNIMPLEMENTED);
 		}
 	}
 
 	public class MIPS_LL : MIPS_Instruction
 	{
 		public override void execute(ref MIPS_InstructionContext context) {
-
+            throw new MIPS_Exception(MIPS_Exception.ExceptionCode.UNIMPLEMENTED);
 		}
 	}
 
 	public class MIPS_SDC1 : MIPS_Instruction
 	{
 		public override void execute(ref MIPS_InstructionContext context) {
-
+            throw new MIPS_Exception(MIPS_Exception.ExceptionCode.UNIMPLEMENTED);
 		}
 	}
 
 	public class MIPS_SDC2 : MIPS_Instruction
 	{
 		public override void execute(ref MIPS_InstructionContext context) {
-
+            throw new MIPS_Exception(MIPS_Exception.ExceptionCode.UNIMPLEMENTED);
 		}
 	}
 
 	public class MIPS_LWCL : MIPS_Instruction
 	{
 		public override void execute(ref MIPS_InstructionContext context) {
-
+            throw new MIPS_Exception(MIPS_Exception.ExceptionCode.UNIMPLEMENTED);
 		}
 	}
 
 	public class MIPS_PREF : MIPS_Instruction
 	{
 		public override void execute(ref MIPS_InstructionContext context) {
-
+            throw new MIPS_Exception(MIPS_Exception.ExceptionCode.UNIMPLEMENTED);
 		}
 	}
 
 	public class MIPS_SC : MIPS_Instruction
 	{
 		public override void execute(ref MIPS_InstructionContext context) {
-
+            throw new MIPS_Exception(MIPS_Exception.ExceptionCode.UNIMPLEMENTED);
 		}
 	}
 
 	public class MIPS_SWCL : MIPS_Instruction
 	{
 		public override void execute(ref MIPS_InstructionContext context) {
-
+            throw new MIPS_Exception(MIPS_Exception.ExceptionCode.UNIMPLEMENTED);
 		}
 	}
 }

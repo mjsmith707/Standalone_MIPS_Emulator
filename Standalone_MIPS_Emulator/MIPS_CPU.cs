@@ -13,6 +13,7 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 
 using System;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Timers;
@@ -50,7 +51,7 @@ namespace Standalone_MIPS_Emulator
 	public class MIPS_CPU
 	{
 		// Global Verbose Debugging
-        public const bool DEBUG_CPU = false;
+        public const bool DEBUG_CPU = true;
 
 		// Decoder Constants
 		private const UInt32 OPCODEMASK = 0xFC000000;
@@ -86,6 +87,9 @@ namespace Standalone_MIPS_Emulator
 		private MIPS_Boolean branchDelay;
 		private MIPS_Register branchTarget;
 
+		// Interrupt/Exception Stuff
+		private ConcurrentQueue<MIPS_Exception> interrupts;
+
 		public MIPS_CPU()
 		{
 			cyclecount = 0;
@@ -107,6 +111,9 @@ namespace Standalone_MIPS_Emulator
 
 			// Initialize Register File
 			registerFile = new MIPS_Register[32];
+
+			// Initialize Interrupt Queue
+			interrupts = new ConcurrentQueue<MIPS_Exception>();
 
 			// Mute r0
 			registerFile [0] = new MIPS_Register(0, true);
@@ -222,7 +229,6 @@ namespace Standalone_MIPS_Emulator
 		// FDX Loop
         // Needs execution cap
 		public void start() {
-			
 			while (true) {
 				try {
 					if (DEBUG_CPU) {
@@ -231,22 +237,42 @@ namespace Standalone_MIPS_Emulator
                         Console.WriteLine("Cycle" + "    = {0}", cyclecount);
 					}
                     /*
-                    if (cyclecount % 500000 == 0)
-                    {
+                    else if (cyclecount % 500000 == 0) {
                         Console.WriteLine("Cycle" + "    = {0}", cyclecount);
                     }
                     */
+
+					serviceints();
 					fetch();
 					decode();
 					execute();
 					cyclecount++;
 				}
+                catch (MIPS_Exception e) {
+					// Catch Internal Interrupts/Exceptions
+					// Enqueue immediately
+					interrupts.Enqueue(e);
+                }
 				catch (Exception e) {
 					Console.WriteLine("Exception: " + e.Message);
                     break;
 				}
 			}
 		}
+
+		// Service enqueued interrupts/exceptions
+		// Mainly update coprocessor 0 registers
+		// and redirect program control to ISR
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void serviceints() {
+			MIPS_Exception e;
+			if (interrupts.TryDequeue(out e)) {
+				Console.WriteLine("serviceint caught exception");
+				Console.WriteLine(e.Message);
+			} else {
+				return;
+			}
+        }
 
 		// Fetch next instruction or execute branch
 		// During execution PC points to next instruction, not current.
@@ -348,22 +374,24 @@ namespace Standalone_MIPS_Emulator
 				using (BinaryReader reader = new BinaryReader(File.Open(filename, FileMode.Open))) {
 					uint count = 0;
 					byte[] array = new byte[4];
-					for (uint i=0; i<=reader.BaseStream.Length; i++) {
+					for (uint i=0; i<reader.BaseStream.Length; i++) {
+                        array[count] = reader.ReadByte();
+                        count++;
 						if (count == 4) {
 							UInt32 word = byteArrayToUInt32(array);
-							Console.WriteLine("address: 0x{0:X}      = 0x{1:X}", address, word);
+                            if (DEBUG_CPU) {
+                                Console.WriteLine("address: 0x{0:X}      = 0x{1:X}", address, word);
+                            }
 							loadText(address, word);
 							address += 4;
 							count = 0;
 						}
-                        if (i == reader.BaseStream.Length) {
-                            break;
-                        }
-						array[count] = reader.ReadByte();
-						count ++;
 					}
 				}
-                Console.WriteLine("File Loaded");
+
+                if (DEBUG_CPU) {
+                    Console.WriteLine("File Loaded");
+                }
 			} catch (Exception e) {
 				Console.WriteLine("Error: " + e.Message);
 			}
@@ -385,7 +413,9 @@ namespace Standalone_MIPS_Emulator
             // Set Program Counter
             PC.setValue(address);
 
-            Console.WriteLine("ELF Entry Point: 0x{0:X}", address);
+            if (DEBUG_CPU) {
+                Console.WriteLine("ELF Entry Point: 0x{0:X}", address);
+            }
 
             // Load all Prog Sections
             foreach (var section in elfloader.GetSections<ELFSharp.ELF.Sections.ProgBitsSection<uint>>()) {
@@ -394,22 +424,27 @@ namespace Standalone_MIPS_Emulator
                 }
                 else {
                     address = section.LoadAddress;
-                    Console.WriteLine("Section: {0}         0x{1:X}", section.Name ,address);
+
+                    if (DEBUG_CPU) {
+                        Console.WriteLine("Section: {0}         0x{1:X}", section.Name, address);
+                    }
+                    
                     uint count = 0;
                     byte[] array = new byte[4];
 
-                    foreach (var inst in textseg.GetContents())
-                    {
-                        if (count == 4)
-                        {
+                    foreach (var inst in textseg.GetContents()) {
+                        array[count] = inst;
+                        count++;
+                        if (count == 4) {
                             UInt32 word = byteArrayToUInt32(array);
-                            Console.WriteLine("address: 0x{0:X}      = 0x{1:X}", address, word);
                             loadText(address, word);
                             address += 4;
                             count = 0;
+
+                            if (DEBUG_CPU) {
+                                Console.WriteLine("address: 0x{0:X}      = 0x{1:X}", address, word);
+                            }
                         }
-                        array[count] = inst;
-                        count++;
                     }
                 }
             }

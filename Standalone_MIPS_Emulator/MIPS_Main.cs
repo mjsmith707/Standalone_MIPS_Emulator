@@ -20,6 +20,7 @@ namespace Standalone_MIPS_Emulator
 	{
 		// Performance Timer
 		private static Timer perfTimer;
+        private static UInt64 lastCount;
 
 		public static MIPS_CPU CPU0;
 
@@ -28,21 +29,27 @@ namespace Standalone_MIPS_Emulator
 			CPU0 = new MIPS_CPU();
 			// 001000 00001 00010 00000 00000 001111
 
-			CPU0.loadFile(0x00000000, "main3.bin");
+			CPU0.loadFile(0x00000000, "cop0_test.bin");
             //CPU0.loadFile(0x400550, "a.bin");
             //CPU0.elfLoader("a.out");
 
+            lastCount = 0;
 			perfTimer = new System.Timers.Timer(60000);
-			perfTimer.Elapsed += OnTimedEvent;
+			perfTimer.Elapsed += cycleSnapshotOnTrigger;
 			perfTimer.Enabled = true;
 
 			CPU0.start();
 		}
 
-		private static void OnTimedEvent(Object source, ElapsedEventArgs e)
+		private static void cycleSnapshotOnTrigger(Object source, ElapsedEventArgs e)
     	{
-        	Console.WriteLine("The Elapsed event was raised at {0}", e.SignalTime);
-			Console.WriteLine("Cycle" + "    = {0}", CPU0.cyclecount);
+            UInt64 count = CPU0.cyclecount;
+            double IPS = (count - lastCount) / 60;
+            double MIPS = IPS / 1000000;
+        	Console.WriteLine("IPS: {0}", IPS);
+            Console.WriteLine("MIPS: {0}", MIPS);
+            Console.WriteLine("IPM: {0}", count - lastCount);
+            lastCount = count;
     	}
 	}
 }
