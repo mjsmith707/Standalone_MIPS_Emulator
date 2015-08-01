@@ -1,0 +1,4 @@
+C:\Users\msmith\Documents\GitHub\Standalone_MIPS_Emulator\Standalone_MIPS_Emulator\bin\Debug\Standalone_MIPS_Emulator.exe
+C:\Users\msmith\Documents\GitHub\Standalone_MIPS_Emulator\Standalone_MIPS_Emulator\bin\Debug\Standalone_MIPS_Emulator.pdb
+C:\Users\msmith\Documents\GitHub\Standalone_MIPS_Emulator\Standalone_MIPS_Emulator\obj\x86\Debug\Standalone_MIPS_Emulator.exe
+C:\Users\msmith\Documents\GitHub\Standalone_MIPS_Emulator\Standalone_MIPS_Emulator\obj\x86\Debug\Standalone_MIPS_Emulator.pdb

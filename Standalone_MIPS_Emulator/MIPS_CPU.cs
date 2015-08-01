@@ -88,6 +88,27 @@ namespace Standalone_MIPS_Emulator {
 		// Interrupt/Exception Stuff
 		private ConcurrentQueue<MIPS_Exception> interrupts;
 
+        // Coprocessor Register Masks
+        private const UInt32 STATUS_BEV_MASK = 0x400000;
+        private const byte STATUS_BEV_SHIFT = 22;
+        private const UInt32 STATUS_IM_MASK = 0x0000FF00;
+        private const byte STATUS_IM_SHIFT = 8;
+        private const UInt32 STATUS_IE_MASK = 0x1;
+        private const byte STATUS_IE_SHIFT = 0;
+        private const UInt32 STATUS_EXL_MASK = 0x00000010;
+        private const byte STATUS_EXL_SHIFT = 0x1;
+        private const UInt32 CAUSE_BD_MASK = 0x80000000;
+        private const byte CAUSE_BD_SHIFT = 31;
+        private const UInt32 CAUSE_CE_MASK = 0x30000000;
+        private const byte CAUSE_CE_SHIFT = 28;
+        private const UInt32 CAUSE_IV_MASK = 0x800000;
+        private const byte CAUSE_IV_SHIFT = 23;
+        private const UInt32 CAUSE_IP_MASK = 0x7C00;
+        private const byte CAUSE_IP_SHIFT = 10;
+        private const UInt32 CAUSE_IPRQ_MASK = 0x300;
+        private const byte CAUSE_IPRQ_SHIFT = 8;
+        
+
         // Default Constructor
 		public MIPS_CPU() {
 			cyclecount = 0;
@@ -228,6 +249,10 @@ namespace Standalone_MIPS_Emulator {
 		// FDX Loop
         // Needs execution cap
 		public void start() {
+            UInt32 test = readBits(coprocessors[0].getRegister(12, 0), STATUS_BEV_MASK, STATUS_BEV_SHIFT);
+            Console.WriteLine("readBits test: 0x{0:X}", test);
+            test = readBits(coprocessors[0].getRegister(12, 0), STATUS_IM_MASK, STATUS_IM_SHIFT);
+            Console.WriteLine("readBits test2: 0x{0:X}", test);
 			while (true) {
 				try {
 					if (DEBUG_CPU) {
@@ -237,8 +262,10 @@ namespace Standalone_MIPS_Emulator {
                         printCPC0Registers();
 					}
 
+                    
+
                     // Service a pending interrupt (if any)
-					serviceints();
+                    serviceints();
 
                     // Fetch next instruction
 					fetch();
@@ -271,11 +298,52 @@ namespace Standalone_MIPS_Emulator {
 		// Mainly update coprocessor 0 registers
 		// and redirect program control to ISR
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void serviceints() {
+        private void serviceints() {
 			MIPS_Exception e;
 			if (interrupts.TryDequeue(out e)) {
-				Console.WriteLine("serviceint caught exception");
-				Console.WriteLine(e.Message);
+                if(DEBUG_CPU) {
+                    Console.WriteLine("=== service interrupts ===");
+                    Console.WriteLine(e.Message);
+                }
+
+                // Handle Interrupt and Exception Logic separately?
+                // Interrupt Handler
+                if (e.getCode() == MIPS_Exception.ExceptionCode.INT) {
+                    // Test if Interrupt Enable is on
+                    if (readBits(coprocessors[0].getRegister(12, 0), STATUS_IE_MASK, STATUS_IE_SHIFT) == 0) {
+                        // Interrupts disabled
+                        // FIXME: Test for unmaskable?
+                        return;
+                    }
+
+                    // Store Kernel/Usermode Bit
+
+
+                    // Store Interrupt Enable Bit
+
+                    // Disable Interrupts
+
+                    // Switch to Kernel Mode
+
+                    // Set Branch Delay Bit in Cause Reg
+                    if(branchDelay.getValue()) {
+
+                    }
+
+                    // Set EPC Register
+
+                    // Set ExcCode Field
+
+                    // Set Coprocessor Error (if necessary)
+
+                    // Set BadVAddr (if necessary)
+
+                    // Jump to General Exception Vector
+                }
+                // Exception Handler
+                else {
+                    // 
+                }
 			} 
             else {
 				return;
@@ -285,7 +353,7 @@ namespace Standalone_MIPS_Emulator {
 		// Fetch next instruction or execute branch
 		// During execution PC points to next instruction, not current.
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void fetch()
+        private void fetch()
 		{
             // Instruction in branch delay slot was executed.
             // Now execute the branch itself.
@@ -332,7 +400,7 @@ namespace Standalone_MIPS_Emulator {
 		// MIPS32 Decoder
 		// Decoded fields stored into context.
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public void decode() {
+		private void decode() {
             // Slice up current value in Instruction Register
 			byte opcodec 	= (byte)((IR.getValue() & OPCODEMASK) >> OPCODESHIFT);
 			byte rs 		= (byte)((IR.getValue() & RSMASK) >> RSSHIFT);
@@ -363,7 +431,7 @@ namespace Standalone_MIPS_Emulator {
 		// For speed purposes, common arithmetic functions are in a separate
 		// jump table from the opcode table.
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public void execute() {
+		private void execute() {
 			if (DEBUG_CPU) {
 				Console.WriteLine("==== Execute ====");
                 Console.WriteLine("=Disassembly=");
@@ -389,6 +457,20 @@ namespace Standalone_MIPS_Emulator {
 				opcode[context.getOpcode()].execute(ref context);
 			}
 		}
+
+        // Convenience Function
+        // Returns masked bits downshifted from a value (i.e. register)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private UInt32 readBits(UInt32 value, UInt32 mask, byte shift) {
+            return (UInt32)((value & mask) >> shift);
+        }
+
+        // Convenience Function
+        // Write bits
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private UInt32 writeBits(UInt32 dst, UInt32 src, byte shift) {
+            return (UInt32)((dst) | (src << shift));
+        }
 
 		// Inserts given word at address in memory
 		public void loadText(UInt32 address, UInt32 word) {
@@ -478,7 +560,7 @@ namespace Standalone_MIPS_Emulator {
 
 		// No union support so here we are.
 		// Joins 4 byte array into UInt32
-		public UInt32 byteArrayToUInt32(byte[] array) {
+		private UInt32 byteArrayToUInt32(byte[] array) {
 			UInt32 word = (UInt32)array[0] << 24;
 			word |= (UInt32)array[1] << 16;
 			word |= (UInt32)array[2] << 8;
