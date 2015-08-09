@@ -15,24 +15,24 @@ using System;
 
 // Bool wrapper class to allow referencing
 namespace Standalone_MIPS_Emulator {
-	public class MIPS_Boolean {
+public class MIPS_Boolean {
 
-        // Private boolean value
-		private bool value;
+	// Private boolean value
+	private bool value;
 
-        // Parameterized Constructor
-		public MIPS_Boolean (bool value) {
-			this.value = value;
-		}
-
-        // Public Getter
-		public bool getValue() {
-			return this.value;
-		}
-
-        // Public Setter
-		public void setValue(bool value) {
-			this.value = value;
-		}
+	// Parameterized Constructor
+	public MIPS_Boolean (bool value) {
+		this.value = value;
 	}
+
+	// Public Getter
+	public bool getValue() {
+		return this.value;
+	}
+
+	// Public Setter
+	public void setValue(bool value) {
+		this.value = value;
+	}
+}
 }

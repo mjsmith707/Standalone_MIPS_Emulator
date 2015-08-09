@@ -16,14 +16,14 @@ using System;
 // Coprocessor base class
 // Allows for unboxing all coprocessors from a single array/
 namespace Standalone_MIPS_Emulator {
-	public abstract class MIPS_Coprocessor {
-        // Integer Register abstract function
-		public abstract UInt32 getRegister(byte register, byte sel);
+public abstract class MIPS_Coprocessor {
+	// Integer Register abstract function
+	public abstract UInt32 getRegister(byte register, byte sel);
 
-        // Integer Register abstract software setter
-		public abstract void setRegister(byte register, byte sel, UInt32 value);
+	// Integer Register abstract software setter
+	public abstract void setRegister(byte register, byte sel, UInt32 value);
 
-        // Integer Register abstract hardware setter
-        public abstract void setRegisterHW(byte register, byte sel, UInt32 value);
-	}
+	// Integer Register abstract hardware setter
+	public abstract void setRegisterHW(byte register, byte sel, UInt32 value);
+}
 }
