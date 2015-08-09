@@ -162,7 +162,7 @@ namespace Standalone_MIPS_Emulator
 	public class MIPS_SYSCALL : MIPS_Instruction
 	{
 		public override void execute(ref MIPS_InstructionContext context) {
-            throw new MIPS_Exception(MIPS_Exception.ExceptionCode.UNIMPLEMENTED);
+            throw new MIPS_Exception(MIPS_Exception.ExceptionCode.SYSCALL);
 		}
 	}
 
@@ -720,6 +720,16 @@ namespace Standalone_MIPS_Emulator
 				case 0x4: {
 					UInt32 value = context.getRegisters()[context.getRT()].getValue();
 					context.getCoprocessors()[0].setRegister(context.getRD(), sel, value);
+
+					// Check for Cause register software interrupts IP0/IP1
+					// CPU.serviceint() will test whether interrupt is valid
+					if ((context.getRD() == 13) && (sel == 0)) {
+						if (((value & 0x100) >> 8) == 0x1) {
+							throw new MIPS_Exception(MIPS_Exception.InterruptNumber.IP0);
+						} else if (((value & 0x200) >> 9) == 0x1) {
+							throw new MIPS_Exception(MIPS_Exception.InterruptNumber.IP1);
+						}
+					}
 					break;
 				}
                 default: {
@@ -967,6 +977,13 @@ namespace Standalone_MIPS_Emulator
 	{
 		public override void execute(ref MIPS_InstructionContext context) {
             throw new MIPS_Exception(MIPS_Exception.ExceptionCode.UNIMPLEMENTED);
+		}
+	}
+
+	public class MIPS_RESERVED_INST : MIPS_Instruction
+	{
+		public override void execute(ref MIPS_InstructionContext context) {
+			throw new MIPS_Exception(MIPS_Exception.ExceptionCode.RI);
 		}
 	}
 }

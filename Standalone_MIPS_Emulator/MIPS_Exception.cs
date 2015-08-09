@@ -32,7 +32,7 @@ namespace Standalone_MIPS_Emulator {
             RI = 10,            // Reserved instruction exception
             CPU = 11,           // Coprocessor Unusable exception
             OVF = 12,           // Arithmetic Overflow exception
-            Trap = 13,          // Trap exception
+            TRAP = 13,          // Trap exception
 			Reserved14 = 14,    // Reserved
             FPE = 15,           // Floating point exception
             Reserved16 = 16,    // Reserved
@@ -87,7 +87,8 @@ namespace Standalone_MIPS_Emulator {
 			return this.code;
 		}
 
-        public InterruptNumber getNumber() {
+		// Interrupt number accessor
+        public InterruptNumber getIntNumber() {
             return this.interrupt;
         }
 	}

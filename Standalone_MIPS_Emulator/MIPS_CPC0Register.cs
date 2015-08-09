@@ -14,6 +14,8 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 using System;
 
 // Implements the particularlities of Coprocessor0's registers
+// Probably needs a rewrite to perform efficient bitmasking
+// instead of the current iterative approach.
 namespace Standalone_MIPS_Emulator {
 	public class MIPS_CPC0Register {
         // RWX Bit Enumeration

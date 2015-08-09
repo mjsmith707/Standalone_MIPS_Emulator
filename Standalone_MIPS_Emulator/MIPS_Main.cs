@@ -34,9 +34,10 @@ namespace Standalone_MIPS_Emulator {
             // 00110000000000000000000000000000
 
 			//CPU0.loadFile(0x00000000, "cop0_test.bin");
-            CPU0.loadFile(0x00000000, "registerload_test.bin");
+            //CPU0.loadFile(0x00000000, "registerload_test.bin");
             //CPU0.loadFile(0x400550, "a.bin");
             //CPU0.elfLoader("a.out");
+			CPU0.elfLoader("vmlinux");
 
             lastCount = 0;
 			perfTimer = new System.Timers.Timer(60000);

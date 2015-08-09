@@ -91,12 +91,14 @@ namespace Standalone_MIPS_Emulator {
         // Coprocessor Register Masks
         private const UInt32 STATUS_BEV_MASK = 0x400000;
         private const byte STATUS_BEV_SHIFT = 22;
-        private const UInt32 STATUS_IM_MASK = 0x0000FF00;
+		private const UInt32 STATUS_IM_MASK = 0x8000;
         private const byte STATUS_IM_SHIFT = 8;
         private const UInt32 STATUS_IE_MASK = 0x1;
         private const byte STATUS_IE_SHIFT = 0;
         private const UInt32 STATUS_EXL_MASK = 0x00000010;
         private const byte STATUS_EXL_SHIFT = 0x1;
+		private const UInt32 STATUS_ERL_MASK = 0x00000100;
+		private const byte STATUS_ERL_SHIFT = 0x2;
         private const UInt32 CAUSE_BD_MASK = 0x80000000;
         private const byte CAUSE_BD_SHIFT = 31;
         private const UInt32 CAUSE_CE_MASK = 0x30000000;
@@ -107,6 +109,8 @@ namespace Standalone_MIPS_Emulator {
         private const byte CAUSE_IP_SHIFT = 10;
         private const UInt32 CAUSE_IPRQ_MASK = 0x300;
         private const byte CAUSE_IPRQ_SHIFT = 8;
+		private const UInt32 CAUSE_EXCCODE_MASK = 0x7C;
+		private const byte CAUSE_EXCCODE_SHIFT = 2;
         
 
         // Default Constructor
@@ -224,6 +228,7 @@ namespace Standalone_MIPS_Emulator {
 			opcode[0x16] = new MIPS_BLEZL();
 			opcode[0x17] = new MIPS_BGTZL();
 			opcode[0x1C] = new MIPS_SPECIAL2();
+			opcode[0x1F] = new MIPS_RESERVED_INST();
 			opcode[0x20] = new MIPS_LB();
 			opcode[0x21] = new MIPS_LH();
 			opcode[0x22] = new MIPS_LWL();
@@ -249,10 +254,6 @@ namespace Standalone_MIPS_Emulator {
 		// FDX Loop
         // Needs execution cap
 		public void start() {
-            UInt32 test = readBits(coprocessors[0].getRegister(12, 0), STATUS_BEV_MASK, STATUS_BEV_SHIFT);
-            Console.WriteLine("readBits test: 0x{0:X}", test);
-            test = readBits(coprocessors[0].getRegister(12, 0), STATUS_IM_MASK, STATUS_IM_SHIFT);
-            Console.WriteLine("readBits test2: 0x{0:X}", test);
 			while (true) {
 				try {
 					if (DEBUG_CPU) {
@@ -261,8 +262,6 @@ namespace Standalone_MIPS_Emulator {
 						printGPRRegisters();
                         printCPC0Registers();
 					}
-
-                    
 
                     // Service a pending interrupt (if any)
                     serviceints();
@@ -303,47 +302,160 @@ namespace Standalone_MIPS_Emulator {
 			if (interrupts.TryDequeue(out e)) {
                 if(DEBUG_CPU) {
                     Console.WriteLine("=== service interrupts ===");
-                    Console.WriteLine(e.Message);
+                    Console.WriteLine(e.getCode());
                 }
 
-                // Handle Interrupt and Exception Logic separately?
                 // Interrupt Handler
-                if (e.getCode() == MIPS_Exception.ExceptionCode.INT) {
-                    // Test if Interrupt Enable is on
-                    if (readBits(coprocessors[0].getRegister(12, 0), STATUS_IE_MASK, STATUS_IE_SHIFT) == 0) {
-                        // Interrupts disabled
-                        // FIXME: Test for unmaskable?
-                        return;
-                    }
+				if (e.getCode() == MIPS_Exception.ExceptionCode.INT) {
+					// Test if Status Register Global Interrupt Enable is on
+					if (readBits(coprocessors [0].getRegister(12, 0), STATUS_IE_MASK, STATUS_IE_SHIFT) == 0) {
+						// Interrupts disabled
+						// FIXME: Test for unmaskable
+						return;
+						// Test if Status Register Interrupt Enable is on
+					} 
+					else if (readBits(coprocessors [0].getRegister(12, 0), STATUS_IM_MASK, ((Int32)e.getIntNumber () - 1)) == 0) {
+						// Interrupt disabled
+						// FIXME: Test for unmaskable
+						return;
+						// Test if EXL and ERL Bits = 0
+					} 
+					else if ((readBits(coprocessors [0].getRegister(12, 0), STATUS_EXL_MASK, STATUS_EXL_SHIFT) == 0x1) 
+						&& (readBits(coprocessors [0].getRegister(12, 0), STATUS_ERL_MASK, STATUS_ERL_SHIFT) == 0x1)) {
+						return;
+					}
+				}
 
-                    // Store Kernel/Usermode Bit
+				// Combined Interrupt/Exception Handler
+				// mips vol3 pg 24
 
+				UInt32 vectorOffset = 0;
+				// if StatusEXL = 0
+				if (readBits(coprocessors[0].getRegister(12, 0), STATUS_EXL_MASK, STATUS_EXL_SHIFT) == 0) {
+					if (branchDelay.getValue()) {
+						// EPC = PC-8
+						coprocessors[0].setRegisterHW(30, 0, PC.getValue()-8);
+						// CauseBD = 1
+						coprocessors[0].setRegisterHW(13, 0, (coprocessors[0].getRegister(13, 0) | CAUSE_BD_MASK));
+					}
+					else {
+						// EPC = PC
+						coprocessors[0].setRegisterHW(30, 0, PC.getValue()-4);
+						// CauseBD = 0
+						coprocessors[0].setRegisterHW(13, 0, (coprocessors[0].getRegister(13, 0) & (~CAUSE_BD_MASK)));
+					}
+					// TLBRefill Exception
+					if (e.getCode() == MIPS_Exception.ExceptionCode.TLBL || e.getCode() == MIPS_Exception.ExceptionCode.TLBS) {
+						vectorOffset = 0;
+					}
+					// Interrupt Vector
+					else if ((e.getCode() == MIPS_Exception.ExceptionCode.INT) && (readBits(coprocessors[0].getRegister(13, 0), CAUSE_IV_MASK, CAUSE_IV_SHIFT) == 0x1)) {
+						vectorOffset = 0x200;
+					}
+					// General Offset
+					else {
+						vectorOffset = 0x180;
+					}
+				}
+				// General Offset
+				else {
+					vectorOffset = 0x180;
 
-                    // Store Interrupt Enable Bit
+					// Not specifically stated in manual
+					// but what would happen if EPC is empty?
+					// EPC = PC
+					coprocessors[0].setRegisterHW(30, 0, PC.getValue()-4);
+				}
 
-                    // Disable Interrupts
+				// CauseCE = ????
+				// If we had floating-point I suppose this would be different than 0
+				coprocessors[0].setRegisterHW(13, 0, (coprocessors[0].getRegister(13, 0) & (~CAUSE_CE_MASK)));
 
-                    // Switch to Kernel Mode
+				// CauseExcCode = ExceptionType
+				coprocessors[0].setRegisterHW(13, 0, (coprocessors[0].getRegister(13, 0) | (CAUSE_EXCCODE_MASK & (UInt32)e.getCode())));
 
-                    // Set Branch Delay Bit in Cause Reg
-                    if(branchDelay.getValue()) {
+				// StatusEXL = 1
+				coprocessors[0].setRegisterHW(12, 0, (coprocessors[0].getRegister(12, 0) | STATUS_EXL_MASK));
 
-                    }
+				// Update Program Counter to ISR
+				if (readBits(coprocessors[0].getRegister(12, 0), STATUS_BEV_MASK, STATUS_BEV_SHIFT) == 1) {
+					PC.setValue(0xBFC00200 + vectorOffset);
+				}
+				else {
+					PC.setValue(0x80000000 + vectorOffset);
+				}
 
-                    // Set EPC Register
+				// Reset Branch Controls
+				branch = false;
+				branchDelay.setValue(false);
 
-                    // Set ExcCode Field
-
-                    // Set Coprocessor Error (if necessary)
-
-                    // Set BadVAddr (if necessary)
-
-                    // Jump to General Exception Vector
-                }
-                // Exception Handler
-                else {
-                    // 
-                }
+				// Specific Exception State Modifications
+				switch (e.getCode()) {
+				case MIPS_Exception.ExceptionCode.INT:
+					break;
+				case MIPS_Exception.ExceptionCode.MOD:
+					break;
+				case MIPS_Exception.ExceptionCode.TLBL:
+					break;
+				case MIPS_Exception.ExceptionCode.TLBS:
+					break;
+				case MIPS_Exception.ExceptionCode.ADEL:
+					break;
+				case MIPS_Exception.ExceptionCode.ADES:
+					break;
+				case MIPS_Exception.ExceptionCode.IBE:
+					break;
+				case MIPS_Exception.ExceptionCode.DBUS:
+					break;
+				case MIPS_Exception.ExceptionCode.SYSCALL:
+					break;
+				case MIPS_Exception.ExceptionCode.BKPT:
+					break;
+				case MIPS_Exception.ExceptionCode.RI:
+					break;
+				case MIPS_Exception.ExceptionCode.CPU:
+					break;
+				case MIPS_Exception.ExceptionCode.OVF:
+					break;
+				case MIPS_Exception.ExceptionCode.TRAP:
+					break;
+				case MIPS_Exception.ExceptionCode.Reserved14:
+					break;
+				case MIPS_Exception.ExceptionCode.FPE:
+					break;
+				case MIPS_Exception.ExceptionCode.Reserved16:
+					break;
+				case MIPS_Exception.ExceptionCode.Reserved17:
+					break;
+				case MIPS_Exception.ExceptionCode.C2E:
+					break;
+				case MIPS_Exception.ExceptionCode.Reserved19:
+					break;
+				case MIPS_Exception.ExceptionCode.Reserved20:
+					break;
+				case MIPS_Exception.ExceptionCode.Reserved21:
+					break;
+				case MIPS_Exception.ExceptionCode.MDMX:
+					break;
+				case MIPS_Exception.ExceptionCode.WATCH:
+					break;
+				case MIPS_Exception.ExceptionCode.MCheck:
+					break;
+				case MIPS_Exception.ExceptionCode.Reserved25:
+					break;
+				case MIPS_Exception.ExceptionCode.Reserved26:
+					break;
+				case MIPS_Exception.ExceptionCode.Reserved27:
+					break;
+				case MIPS_Exception.ExceptionCode.Reserved28:
+					break;
+				case MIPS_Exception.ExceptionCode.Reserved29:
+					break;
+				case MIPS_Exception.ExceptionCode.CacheErr:
+					break;
+				case MIPS_Exception.ExceptionCode.Reserved31:
+					break;
+				}
 			} 
             else {
 				return;
@@ -435,6 +547,9 @@ namespace Standalone_MIPS_Emulator {
 			if (DEBUG_CPU) {
 				Console.WriteLine("==== Execute ====");
                 Console.WriteLine("=Disassembly=");
+				if (branchDelay.getValue()) {
+					Console.WriteLine("Delay Slot");
+				}
 			}
 
             // All Funct/SPECIAL instructions have an opcode of 0
@@ -465,12 +580,25 @@ namespace Standalone_MIPS_Emulator {
             return (UInt32)((value & mask) >> shift);
         }
 
+		// Convenience Function Integer Edition
+		// Returns masked bits downshifted from a value (i.e. register)
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		private UInt32 readBits(UInt32 value, UInt32 mask, Int32 shift) {
+			return (UInt32)((value & mask) >> shift);
+		}
+
         // Convenience Function
         // Write bits
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private UInt32 writeBits(UInt32 dst, UInt32 src, byte shift) {
             return (UInt32)((dst) | (src << shift));
         }
+
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		private bool inKernelMode() {
+			return (readBits(coprocessors [0].getRegister (12, 0), STATUS_EXL_MASK, STATUS_EXL_SHIFT) == 0x1) 
+				|| (readBits(coprocessors [0].getRegister (12, 0), STATUS_ERL_MASK, STATUS_ERL_SHIFT) == 0x1);
+		}
 
 		// Inserts given word at address in memory
 		public void loadText(UInt32 address, UInt32 word) {
@@ -516,7 +644,7 @@ namespace Standalone_MIPS_Emulator {
             }
 
             var textseg = elfloader.GetSection(".text");
-            var address = textseg.LoadAddress;
+			var address = elfloader.EntryPoint;
 
             // Set Program Counter
             PC.setValue(address);
@@ -550,7 +678,7 @@ namespace Standalone_MIPS_Emulator {
                             count = 0;
 
                             if (DEBUG_CPU) {
-                                Console.WriteLine("address: 0x{0:X}      = 0x{1:X}", address, word);
+                                //Console.WriteLine("address: 0x{0:X}      = 0x{1:X}", address, word);
                             }
                         }
                     }
