@@ -1,4 +1,4 @@
-﻿/*
+/*
 Copyright (c) 2015, Matt Smith
 All rights reserved.
 
@@ -74,6 +74,7 @@ public class MIPS_CPU {
 	private MIPS_Register[] registerFile;
 	private MIPS_Instruction[] funct;
 	private MIPS_Instruction[] opcode;
+	private MIPS_Instruction[] regimm;
 	private MIPS_InstructionContext context;
 	private MIPS_Register PC;
 	private MIPS_Register IR;
@@ -163,7 +164,7 @@ public class MIPS_CPU {
 	// MIPS32 Architecture For Programmers Volume II: The MIPS32 Instruction Set
 	// Initialize Jump Tables
 	private void initialize_InstructionSet() {
-		// Register Encoded Instructions (AKA Funct/SPECIAL)
+		// Register Encoded Instructions (Funct/SPECIAL)
 		funct = new MIPS_Instruction[64];
 		funct[0x00] = new MIPS_SLL();
 		funct[0x02] = new MIPS_SRL();
@@ -203,9 +204,19 @@ public class MIPS_CPU {
 		funct[0x34] = new MIPS_TEQ();
 		funct[0x36] = new MIPS_TNE();
 
+		// REGIMM Instructions
+		regimm = new MIPS_Instruction[32];
+		regimm[0x00] = new MIPS_BLTZ();
+		regimm[0x01] = new MIPS_BGEZ();
+		regimm[0x02] = new MIPS_BLTZL();
+		regimm[0x03] = new MIPS_BGEZL();
+		regimm[0x10] = new MIPS_BLTZAL();
+		regimm[0x11] = new MIPS_BGEZAL();
+		regimm[0x12] = new MIPS_BLTZALL();
+		regimm[0x13] = new MIPS_BGEZALL();
+
 		// Immediate and J Instructions (Opcode)
 		opcode = new MIPS_Instruction[64];
-		opcode[0x01] = new MIPS_REGIMM();
 		opcode[0x02] = new MIPS_J();
 		opcode[0x03] = new MIPS_JAL();
 		opcode[0x04] = new MIPS_BEQ();
@@ -288,7 +299,7 @@ public class MIPS_CPU {
 				// Simulation Error
 				// Stop FDX Loop
 				Console.WriteLine("Exception: " + e.Message);
-				break;
+				return;
 			}
 		}
 	}
@@ -540,36 +551,51 @@ public class MIPS_CPU {
 	}
 
 	// Execution Caller
-	// For speed purposes, common arithmetic functions are in a separate
-	// jump table from the opcode table.
+	// Functions split into multiple tables for sanity
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]
 	private void execute() {
 		if (DEBUG_CPU) {
 			Console.WriteLine("==== Execute ====");
 			Console.WriteLine("=Disassembly=");
 			if (branchDelay.getValue()) {
-				Console.WriteLine("Delay Slot");
+				Console.WriteLine("-Delay Slot-");
 			}
 		}
+		
+		switch (context.getOpcode()) {
+			// Funct/SPECIAL Instructions
+			case 0x0: {
+				if (DEBUG_CPU) {
+					Console.WriteLine("SPECIAL      INST      RS RT RD IMM JIMM SHAMT");
+					Console.WriteLine("Instruction: {0}, {1}, {2}, {3}, {4}, {5}, {6}", funct[context.getFunct()].GetType().Name, context.getRS(), context.getRT(), context.getRD(), context.getImm(), context.getJimm(), context.getShamt());
+				}
 
-		// All Funct/SPECIAL instructions have an opcode of 0
-		if (context.getOpcode() == 0) {
-			if (DEBUG_CPU) {
-				Console.WriteLine("             INST      RS RT RD IMM JIMM SHAMT");
-				Console.WriteLine("Instruction: {0}, {1}, {2}, {3}, {4}, {5}, {6}", funct[context.getFunct()].GetType().Name, context.getRS(), context.getRT(), context.getRD(), context.getImm(), context.getJimm(), context.getShamt());
+				// Execute Funct
+				funct[context.getFunct()].execute(ref context);
+				break;
 			}
+			// REGIMM Instructions
+			case 0x1: {
+				if (DEBUG_CPU) {
+					Console.WriteLine("REGIMM       INST      RS RT RD IMM JIMM SHAMT");
+					Console.WriteLine("Instruction: {0}, {1}, {2}, {3}, {4}, {5}, {6}", regimm[context.getRT()].GetType().Name, context.getRS(), context.getRT(), context.getRD(), context.getImm(), context.getJimm(), context.getShamt());
+				}
 
-			// Execute Funct
-			funct[context.getFunct()].execute(ref context);
-		}
-		else {
-			if (DEBUG_CPU) {
-				Console.WriteLine("             INST      RS RT RD IMM JIMM SHAMT");
-				Console.WriteLine("Instruction: {0}, {1}, {2}, {3}, {4}, {5}, {6}", opcode[context.getOpcode()].GetType().Name, context.getRS(), context.getRT(), context.getRD(), context.getImm(), context.getJimm(), context.getShamt());
+				// Execute REGIMM
+				regimm[context.getRT()].execute(ref context);
+				break;
 			}
+			// Opcode Format
+			default: {
+				if (DEBUG_CPU) {
+					Console.WriteLine("OPCODE       INST      RS RT RD IMM JIMM SHAMT");
+					Console.WriteLine("Instruction: {0}, {1}, {2}, {3}, {4}, {5}, {6}", opcode[context.getOpcode()].GetType().Name, context.getRS(), context.getRT(), context.getRD(), context.getImm(), context.getJimm(), context.getShamt());
+				}
 
-			// Execute Opcode
-			opcode[context.getOpcode()].execute(ref context);
+				// Execute Opcode
+				opcode[context.getOpcode()].execute(ref context);
+				break;
+			}
 		}
 	}
 
