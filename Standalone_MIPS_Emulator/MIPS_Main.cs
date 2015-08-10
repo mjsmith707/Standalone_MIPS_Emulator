@@ -15,38 +15,38 @@ using System;
 using System.Timers;
 
 namespace Standalone_MIPS_Emulator {
-class MainClass {
-	// Performance Timer
-	private static Timer perfTimer;
-	private static UInt64 lastCount;
+	class MainClass {
+		// Performance Timer
+		private static Timer perfTimer;
+		private static UInt64 lastCount;
 
-	public static MIPS_CPU CPU0;
+		public static MIPS_CPU CPU0;
 
-	public static void Main (string[] args) {
-		CPU0 = new MIPS_CPU();
+		public static void Main (string[] args) {
+			CPU0 = new MIPS_CPU();
 
-		//CPU0.loadFile(0x00000000, "cop0_test.bin");
-		//CPU0.loadFile(0x00000000, "registerload_test.bin");
-		//CPU0.loadFile(0x400550, "a.bin");
-		//CPU0.elfLoader("a.out");
-		CPU0.elfLoader("vmlinux");
+			//CPU0.loadFile(0x00000000, "cop0_test.bin");
+			//CPU0.loadFile(0x00000000, "registerload_test.bin");
+			//CPU0.loadFile(0x400550, "a.bin");
+			//CPU0.elfLoader("a.out");
+			CPU0.elfLoader("vmlinux");
 
-		lastCount = 0;
-		perfTimer = new System.Timers.Timer(60000);
-		perfTimer.Elapsed += cycleSnapshotOnTrigger;
-		perfTimer.Enabled = true;
+			lastCount = 0;
+			perfTimer = new System.Timers.Timer(60000);
+			perfTimer.Elapsed += cycleSnapshotOnTrigger;
+			perfTimer.Enabled = true;
 
-		CPU0.start();
+			CPU0.start();
+		}
+
+		private static void cycleSnapshotOnTrigger(Object source, ElapsedEventArgs e) {
+			UInt64 count = CPU0.cyclecount;
+			double IPS = (count - lastCount) / 60;
+			double MIPS = IPS / 1000000;
+			Console.WriteLine("IPS: {0}", IPS);
+			Console.WriteLine("MIPS: {0}", MIPS);
+			Console.WriteLine("IPM: {0}", count - lastCount);
+			lastCount = count;
+		}
 	}
-
-	private static void cycleSnapshotOnTrigger(Object source, ElapsedEventArgs e) {
-		UInt64 count = CPU0.cyclecount;
-		double IPS = (count - lastCount) / 60;
-		double MIPS = IPS / 1000000;
-		Console.WriteLine("IPS: {0}", IPS);
-		Console.WriteLine("MIPS: {0}", MIPS);
-		Console.WriteLine("IPM: {0}", count - lastCount);
-		lastCount = count;
-	}
-}
 }
