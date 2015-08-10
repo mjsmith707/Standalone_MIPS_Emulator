@@ -143,6 +143,7 @@ public class MIPS_CPC0 : MIPS_Coprocessor {
 		// reset: 10000000000000001000000010000000
 		// mask1: 10000000000000001111111110000111
 		// mask2: 00000000000000000000000000000111
+		//								  10000011
 		registerFile[16,0] = new MIPS_CPC0Register(0x80008080, 0x8000FF87, 0x7);
 
 		// Configuration Register 1

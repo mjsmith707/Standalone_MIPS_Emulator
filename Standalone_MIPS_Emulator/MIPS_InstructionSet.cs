@@ -614,41 +614,39 @@ namespace Standalone_MIPS_Emulator
 		}
 	}
 
-	public class MIPS_COP0 : MIPS_Instruction
+	// Move from Coprocessor 0
+	public class MIPS_MFC0 : MIPS_Instruction
 	{
 		public override void execute(ref MIPS_InstructionContext context) {
+			// FIXME: Requires sel field to be zero.... but who cares? Not True?
+			// FIXME: Throws Coprocessor Unusuable, Reserved Instruction
 			const byte selmask = 0x7;
 			byte sel = (byte)(base.zeroExtend16(context.getImm())&selmask);
-			switch (context.getRS()) {
-				// Move from Coprocessor 0
-				// FIXME: Requires sel field to be zero.... but who cares?
-				// FIXME: Throws Coprocessor Unusuable, Reserved Instruction
-				case 0x0: {
-					byte cpcregister = (byte)context.getRegisters()[context.getRD()].getValue();
-					UInt32 value = context.getCoprocessors()[0].getRegister(cpcregister, sel);
-					context.getRegisters()[context.getRT()].setValue(value);
-					break;
-				}
-				// Move to Coprocessor 0
-				// FIXME: Requires sel field to be zero.... but who cares?
-				// FIXME: Throws Coprocessor Unusuable, Reserved Instruction
-				case 0x4: {
-					UInt32 value = context.getRegisters()[context.getRT()].getValue();
-					context.getCoprocessors()[0].setRegister(context.getRD(), sel, value);
+			byte cpcregister = (byte)context.getRD();
+			UInt32 value = context.getCoprocessors()[0].getRegister(cpcregister, sel);
+			context.getRegisters()[context.getRT()].setValue(value);
+		}
+	}
 
-					// Check for Cause register software interrupts IP0/IP1
-					// CPU.serviceint() will test whether interrupt is valid
-					if ((context.getRD() == 13) && (sel == 0)) {
-						if (((value & 0x100) >> 8) == 0x1) {
-							throw new MIPS_Exception(MIPS_Exception.InterruptNumber.IP0);
-						} else if (((value & 0x200) >> 9) == 0x1) {
-							throw new MIPS_Exception(MIPS_Exception.InterruptNumber.IP1);
-						}
-					}
-					break;
-				}
-				default: {
-					throw new MIPS_Exception(MIPS_Exception.ExceptionCode.CPU);
+	// Move to Coprocessor 0
+	public class MIPS_MTC0 : MIPS_Instruction
+	{
+		public override void execute(ref MIPS_InstructionContext context) {
+			// FIXME: Requires sel field to be zero.... but who cares? Not True?
+			// FIXME: Throws Coprocessor Unusuable, Reserved Instruction
+			const byte selmask = 0x7;
+			byte sel = (byte)(base.zeroExtend16(context.getImm())&selmask);
+
+			UInt32 value = context.getRegisters()[context.getRT()].getValue();
+			context.getCoprocessors()[0].setRegister(context.getRD(), sel, value);
+
+			// Check for Cause register software interrupts IP0/IP1
+			// CPU.serviceint() will test whether interrupt is valid
+			if ((context.getRD() == 13) && (sel == 0)) {
+				if (((value & 0x100) >> 8) == 0x1) {
+					throw new MIPS_Exception(MIPS_Exception.InterruptNumber.IP0);
+				} else if (((value & 0x200) >> 9) == 0x1) {
+					throw new MIPS_Exception(MIPS_Exception.InterruptNumber.IP1);
 				}
 			}
 		}

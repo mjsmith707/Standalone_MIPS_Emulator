@@ -1,10 +1,10 @@
 ﻿<Properties StartupItem="Standalone_MIPS_Emulator\Standalone_MIPS_Emulator.csproj">
   <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug|x64" />
-  <MonoDevelop.Ide.Workbench ActiveDocument="Standalone_MIPS_Emulator/MIPS_InstructionSet.cs">
+  <MonoDevelop.Ide.Workbench ActiveDocument="Standalone_MIPS_Emulator/MIPS_CPU.cs">
     <Files>
-      <File FileName="Standalone_MIPS_Emulator/MIPS_CPU.cs" Line="554" Column="52" />
-      <File FileName="Standalone_MIPS_Emulator/MIPS_InstructionSet.cs" Line="1013" Column="2" />
-      <File FileName="Standalone_MIPS_Emulator/MIPS_Main.cs" Line="1" Column="1" />
+      <File FileName="Standalone_MIPS_Emulator/MIPS_CPU.cs" Line="832" Column="3" />
+      <File FileName="Standalone_MIPS_Emulator/MIPS_InstructionSet.cs" Line="14" Column="14" />
+      <File FileName="Standalone_MIPS_Emulator/MIPS_Main.cs" Line="26" Column="25" />
       <File FileName="Standalone_MIPS_Emulator/MIPS_CPC0.cs" Line="1" Column="1" />
       <File FileName="Standalone_MIPS_Emulator/MIPS_CPC0Register.cs" Line="1" Column="1" />
       <File FileName="Standalone_MIPS_Emulator/MIPS_Exception.cs" Line="1" Column="1" />
@@ -15,6 +15,11 @@
       <File FileName="Standalone_MIPS_Emulator/MIPS_MemoryPage.cs" Line="1" Column="1" />
       <File FileName="Standalone_MIPS_Emulator/MIPS_Register.cs" Line="1" Column="1" />
     </Files>
+    <Pads>
+      <Pad Id="MonoDevelop.Debugger.WatchPad">
+        <State />
+      </Pad>
+    </Pads>
   </MonoDevelop.Ide.Workbench>
   <MonoDevelop.Ide.DebuggingService.Breakpoints>
     <BreakpointStore>
