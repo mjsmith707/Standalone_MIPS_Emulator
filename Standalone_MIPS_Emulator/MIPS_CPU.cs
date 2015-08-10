@@ -686,7 +686,6 @@ namespace Standalone_MIPS_Emulator {
 				Console.WriteLine(header);
 			}
 
-			//var textseg = elfloader.GetSection(".text");
 			var address = elfloader.EntryPoint;
 
 			// Set Program Counter
