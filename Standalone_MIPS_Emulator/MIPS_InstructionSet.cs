@@ -708,29 +708,6 @@ namespace Standalone_MIPS_Emulator
 		}
 	}
 
-	// SPECIAL2 Functions
-	public class MIPS_SPECIAL2 : MIPS_Instruction
-	{
-		public override void execute(ref MIPS_InstructionContext context) {
-			switch (context.getFunct()) {
-				// MUL Multiply Word to GPR
-				case 0x2: {
-					unchecked {
-						Int64 result = 
-							(Int32)context.getRegisters()[context.getRS()].getValue()
-							*
-							(Int32)context.getRegisters()[context.getRT()].getValue();
-						context.getRegisters()[context.getRD()].setValue((UInt32)(result & 0x00000000FFFFFFFF));
-					}
-					break;
-				}
-				default: {
-					throw new MIPS_Exception(MIPS_Exception.ExceptionCode.UNIMPLEMENTED);
-				}
-			}
-		}
-	}
-
 	// Branch on Greater Than Zero Likely
 	public class MIPS_BGTZL : MIPS_Instruction
 	{
@@ -863,10 +840,15 @@ namespace Standalone_MIPS_Emulator
 		}
 	}
 
+	// Load Linked Word
+	// FIXME: Partial Support (Not atomic, requires memory rewrite)
+	// Lots of Int/Uint casting going on but manual is ambiguous about negative addresses
 	public class MIPS_LL : MIPS_Instruction
 	{
 		public override void execute(ref MIPS_InstructionContext context) {
-			throw new MIPS_Exception(MIPS_Exception.ExceptionCode.UNIMPLEMENTED);
+			Int32 vAddr = signExtend32(context.getImm());
+			vAddr += (Int32)context.getRegisters()[context.getRS()].getValue();
+			context.getRegisters()[context.getRT()].setValue(context.getMemory().ReadWord((UInt32)vAddr));
 		}
 	}
 
@@ -898,10 +880,17 @@ namespace Standalone_MIPS_Emulator
 		}
 	}
 
+	// Store Conditional Word
+	// FIXME: Partial Support (Not atomic, requires memory rewrite)
 	public class MIPS_SC : MIPS_Instruction
 	{
 		public override void execute(ref MIPS_InstructionContext context) {
-			throw new MIPS_Exception(MIPS_Exception.ExceptionCode.UNIMPLEMENTED);
+			Int32 vAddr = signExtend32(context.getImm());
+			vAddr += (Int32)context.getRegisters()[context.getRS()].getValue();
+			// FIXME: if LLBit == 1 then
+			context.getMemory().StoreWord((UInt32)vAddr, context.getRegisters()[context.getRT()].getValue());
+			// FIXME: then rt = LLbit
+			context.getRegisters()[context.getRT()].setValue(0x1);
 		}
 	}
 
@@ -1020,6 +1009,126 @@ namespace Standalone_MIPS_Emulator
 			else {
 				context.getPC().setValue(context.getPC().getValue() + 4);
 			}
+		}
+	}
+
+	// Count Leading Ones in Word
+	public class MIPS_CLO : MIPS_Instruction
+	{
+		public override void execute(ref MIPS_InstructionContext context) {
+			UInt32 count = 0;
+			const UInt32 mask = 0x1;
+			UInt32 value = context.getRegisters()[context.getRS()].getValue();
+			for (Int32 i=31; i>=0; i--) {
+				if (((value >> i) & mask) == mask) {
+					count++;
+					break;
+				}
+			}
+			context.getRegisters()[context.getRD()].setValue(count);
+		}
+	}
+
+	// Count Leading Zeroes in Word
+	public class MIPS_CLZ : MIPS_Instruction
+	{
+		public override void execute(ref MIPS_InstructionContext context) {
+			UInt32 count = 0;
+			const UInt32 mask = 0x1;
+			UInt32 value = context.getRegisters()[context.getRS()].getValue();
+			for (Int32 i=31; i>=0; i--) {
+				if (((value >> i) & mask) == 0x0) {
+					count++;
+					break;
+				}
+			}
+			context.getRegisters()[context.getRD()].setValue(count);
+		}
+	}
+
+	// Disable Interrupts
+	public class MIPS_DI : MIPS_Instruction
+	{
+		public override void execute(ref MIPS_InstructionContext context) {
+			const UInt32 STATUS_IE_MASK = 0x1;
+
+			context.getRegisters()[context.getRT()].setValue(context.getCoprocessors()[0].getRegister(12,0));
+			context.getCoprocessors()[0].setRegister(12,0, (context.getCoprocessors()[0].getRegister(12,0) & (~STATUS_IE_MASK)));
+		}
+	}
+
+	// Enable Interrupts
+	public class MIPS_EI : MIPS_Instruction
+	{
+		public override void execute(ref MIPS_InstructionContext context) {
+			const UInt32 STATUS_IE_MASK = 0x1;
+
+			context.getRegisters()[context.getRT()].setValue(context.getCoprocessors()[0].getRegister(12,0));
+			context.getCoprocessors()[0].setRegister(12,0, (context.getCoprocessors()[0].getRegister(12,0) | STATUS_IE_MASK));
+		}
+	}
+
+	// Extract Bit Field
+	// FIXME: Not terribly confident about this
+	// shamt = position
+	// rd = size-1
+	public class MIPS_EXT : MIPS_Instruction
+	{
+		public override void execute(ref MIPS_InstructionContext context) {
+			UInt32 msbd = (UInt32)context.getShamt();
+			Int32 lsb = (Int32)context.getRegisters()[context.getRD()].getValue();
+			if ((lsb + msbd) > 31) {
+				// UNPREDICTABLE
+				return;
+			}
+
+			UInt32 mask = ((UInt32)0x1 << lsb);
+			UInt32 temp = 0x0;
+			UInt32 res = 0x0;
+			Int32 shift = lsb;
+			UInt32 rs = context.getRegisters()[context.getRS()].getValue();
+
+			for (Int32 count=0; count != msbd; count++) {
+				temp = mask & rs;
+				temp >>= shift;
+				shift--;
+				mask <<= 1;
+				res |= temp;
+			}
+			Console.WriteLine("DEBUG: EXT Result = 0x{0:X}", res);
+			context.getRegisters()[context.getRT()].setValue(res);
+		}
+	}
+
+	// Insert Bit Field
+	// FIXME: Not terribly confident about this, same as EXT
+	public class MIPS_INS : MIPS_Instruction
+	{
+		public override void execute(ref MIPS_InstructionContext context) {
+			UInt32 msbd = (UInt32)context.getShamt();
+			Int32 lsb = (Int32)context.getRegisters()[context.getRD()].getValue();
+			if ((lsb + msbd) > 31) {
+				// UNPREDICTABLE
+				return;
+			}
+
+			UInt32 mask = ((UInt32)0x1 << lsb);
+			UInt32 temp = 0x0;
+			UInt32 res = 0x0;
+			Int32 shift = lsb;
+			UInt32 rs = context.getRegisters()[context.getRS()].getValue();
+
+			for (Int32 count=0; count != msbd; count++) {
+				temp = mask & rs;
+				temp >>= shift;
+				shift--;
+				mask <<= 1;
+				res |= temp;
+			}
+
+			res <<= (Int32)msbd;
+			res |= context.getRegisters()[context.getRT()].getValue();
+			context.getRegisters()[context.getRT()].setValue(res);
 		}
 	}
 }

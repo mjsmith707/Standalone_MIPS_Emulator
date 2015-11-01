@@ -34,7 +34,7 @@ namespace Standalone_MIPS_Emulator {
 			lastCount = 0;
 			perfTimer = new System.Timers.Timer(60000);
 			perfTimer.Elapsed += cycleSnapshotOnTrigger;
-			perfTimer.Enabled = true;
+			perfTimer.Enabled = false;
 
 			CPU0.start();
 		}

@@ -11,9 +11,6 @@ Redistribution and use in source and binary forms, with or without modification,
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-// Global Verbose Debugging
-#define MIPS_DEBUG_CPU
-
 using System;
 using System.Collections;
 using System.Collections.Concurrent;
@@ -51,6 +48,15 @@ using System.Timers;
 
 namespace Standalone_MIPS_Emulator {
 	public class MIPS_CPU {
+		// Back to Debug Var
+		private bool MIPS_DEBUG_CPU = false;
+
+		private bool breakpoint_active = false;
+		private UInt32 breakpoint = 0x0;
+
+		private bool step = true;
+		private string lastcmd = "";
+
 		// Decoder Constants
 		private const UInt32 OPCODEMASK = 0xFC000000;
 		private const byte OPCODESHIFT 	= 26;
@@ -73,6 +79,8 @@ namespace Standalone_MIPS_Emulator {
 		private MIPS_Coprocessor[] coprocessors;
 		private MIPS_Register[] registerFile;
 		private MIPS_Instruction[] funct;
+		private MIPS_Instruction[] special2;
+		private MIPS_Instruction[] special3;
 		private MIPS_Instruction[] regimm;
 		private MIPS_Instruction[] cop0;
 		private MIPS_Instruction[] opcode;
@@ -205,6 +213,16 @@ namespace Standalone_MIPS_Emulator {
 			funct[0x34] = new MIPS_TEQ();
 			funct[0x36] = new MIPS_TNE();
 
+			// SPECIAL2 Instructions
+			special2 = new MIPS_Instruction[64];
+			special2[0x20] = new MIPS_CLZ();
+			special2[0x21] = new MIPS_CLO();
+
+			// SPECIAL3 Instructions
+			special3 = new MIPS_Instruction[64];
+			special3[0x0] = new MIPS_EXT();
+			special3[0x4] = new MIPS_INS();
+
 			// REGIMM Instructions
 			regimm = new MIPS_Instruction[32];
 			regimm[0x00] = new MIPS_BLTZ();
@@ -220,6 +238,7 @@ namespace Standalone_MIPS_Emulator {
 			cop0 = new MIPS_Instruction[32];
 			cop0[0x00] = new MIPS_MFC0();
 			cop0[0x04] = new MIPS_MTC0();
+			cop0[0x0B] = new MIPS_DI();
 
 			// Immediate and J Instructions (Opcode)
 			opcode = new MIPS_Instruction[64];
@@ -243,8 +262,6 @@ namespace Standalone_MIPS_Emulator {
 			opcode[0x15] = new MIPS_BNEL();
 			opcode[0x16] = new MIPS_BLEZL();
 			opcode[0x17] = new MIPS_BGTZL();
-			opcode[0x1C] = new MIPS_SPECIAL2();
-			opcode[0x1F] = new MIPS_RESERVED_INST();
 			opcode[0x20] = new MIPS_LB();
 			opcode[0x21] = new MIPS_LH();
 			opcode[0x22] = new MIPS_LWL();
@@ -272,13 +289,15 @@ namespace Standalone_MIPS_Emulator {
 		public void start() {
 			while (true) {
 				try {
-					#if (MIPS_DEBUG_CPU)
+					checkConsole();
+
+					if (MIPS_DEBUG_CPU) {
 						Console.WriteLine("");
 						Console.WriteLine("Cycle" + "    = {0}", cyclecount);
 						printGPRRegisters();
 						printCPC0Registers();
-					#endif
-					
+					}
+
 					// Service a pending interrupt (if any)
 					serviceints();
 
@@ -304,6 +323,8 @@ namespace Standalone_MIPS_Emulator {
 					// Simulation Error
 					// Stop FDX Loop
 					Console.WriteLine("Exception: " + e.Message);
+					printGPRRegisters();
+					printCPC0Registers();
 					return;
 				}
 			}
@@ -316,10 +337,18 @@ namespace Standalone_MIPS_Emulator {
 		private void serviceints() {
 			MIPS_Exception e;
 			if (interrupts.TryDequeue(out e)) {
-				#if (MIPS_DEBUG_CPU)
+				if (MIPS_DEBUG_CPU) {
 					Console.WriteLine("=== service interrupts ===");
 					Console.WriteLine(e.getCode());
-				#endif
+				}
+
+				if (e.getCode() == MIPS_Exception.ExceptionCode.UNIMPLEMENTED) {
+					String error = "Instruction Not Implemented PC=0x";
+					error += PC.getValue().ToString("X8");
+					error += " IR=0x";
+					error += IR.getValue().ToString("X8");
+					throw new ApplicationException(error);
+				}
 
 				// Interrupt Handler
 				if (e.getCode() == MIPS_Exception.ExceptionCode.INT) {
@@ -328,8 +357,9 @@ namespace Standalone_MIPS_Emulator {
 						// Interrupts disabled
 						// FIXME: Test for unmaskable
 						return;
-						// Test if Status Register Interrupt Enable is on
+
 					}
+					// Test if Status Register Interrupt Enable is on
 					else if (readBits(coprocessors [0].getRegister(12, 0), STATUS_IM_MASK, ((Int32)e.getIntNumber () - 1)) == 0) {
 						// Interrupt disabled
 						// FIXME: Test for unmaskable
@@ -495,11 +525,11 @@ namespace Standalone_MIPS_Emulator {
 				// Update Instruction Register
 				this.IR.setValue(mainMemory.ReadWord(PC.getValue()));
 
-				#if (MIPS_DEBUG_CPU)
+				if (MIPS_DEBUG_CPU) {
 					Console.WriteLine("==== Fetch ====");
 					Console.WriteLine("PC     = 0x{0:X}", PC.getValue());
 					Console.WriteLine("IR     = 0x{0:X}", IR.getValue());
-				#endif
+				}
 				
 				// Advance Program Counter
 				this.PC.setValue(PC.getValue() + 4);
@@ -508,11 +538,11 @@ namespace Standalone_MIPS_Emulator {
 				// Update Instruction Register
 				this.IR.setValue(mainMemory.ReadWord(PC.getValue()));
 
-				#if (MIPS_DEBUG_CPU)
+				if (MIPS_DEBUG_CPU) {
 					Console.WriteLine("==== Fetch ====");
 					Console.WriteLine("PC     = 0x{0:X}", PC.getValue());
 					Console.WriteLine("IR     = 0x{0:X}", IR.getValue());
-				#endif
+				}
 				
 				// Advance Program Counter
 				this.PC.setValue(PC.getValue() + 4);
@@ -542,7 +572,7 @@ namespace Standalone_MIPS_Emulator {
 			// Store into the Instruction Context
 			context.setContext(opcodec, rs, rt, rd, shamt, functc, imm, jimm);
 
-			#if (MIPS_DEBUG_CPU)
+			if (MIPS_DEBUG_CPU) {
 				Console.WriteLine("==== Decode ====");
 				Console.WriteLine("opcode = 0x{0:X}", opcodec);
 				Console.WriteLine("rs     = 0x{0:X}", rs);
@@ -552,28 +582,28 @@ namespace Standalone_MIPS_Emulator {
 				Console.WriteLine("functc = 0x{0:X}", functc);
 				Console.WriteLine("imm    = 0x{0:X}", imm);
 				Console.WriteLine("jimm   = 0x{0:X}", jimm);
-			#endif
+			}
 		}
 
 		// Execution Caller
 		// Functions split into multiple tables for sanity
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		private void execute() {
-			#if (MIPS_DEBUG_CPU)
+			if (MIPS_DEBUG_CPU) {
 				Console.WriteLine("==== Execute ====");
 				Console.WriteLine("=Disassembly=");
 				if (branchDelay.getValue()) {
 					Console.WriteLine("-Delay Slot-");
 				}
-			#endif
+			}
 			
 			switch (context.getOpcode()) {
 				// Funct/SPECIAL Instructions
 				case 0x0: {
-					#if (MIPS_DEBUG_CPU)
+					if (MIPS_DEBUG_CPU) {
 						Console.WriteLine("SPECIAL      INST      RS RT RD IMM JIMM SHAMT");
 						Console.WriteLine("Instruction: {0}, {1}, {2}, {3}, {4}, {5}, {6}", funct[context.getFunct()].GetType().Name, context.getRS(), context.getRT(), context.getRD(), context.getImm(), context.getJimm(), context.getShamt());
-					#endif
+					}
 
 					// Execute Funct
 					funct[context.getFunct()].execute(ref context);
@@ -581,10 +611,10 @@ namespace Standalone_MIPS_Emulator {
 				}
 				// REGIMM Instructions
 				case 0x1: {
-					#if (MIPS_DEBUG_CPU)
+					if (MIPS_DEBUG_CPU) {
 						Console.WriteLine("REGIMM       INST      RS RT RD IMM JIMM SHAMT");
 						Console.WriteLine("Instruction: {0}, {1}, {2}, {3}, {4}, {5}, {6}", regimm[context.getRT()].GetType().Name, context.getRS(), context.getRT(), context.getRD(), context.getImm(), context.getJimm(), context.getShamt());
-					#endif
+					}
 
 					// Execute REGIMM
 					regimm[context.getRT()].execute(ref context);
@@ -592,21 +622,43 @@ namespace Standalone_MIPS_Emulator {
 				}
 				// COP0 Instructions
 				case 0x10: {
-					#if (MIPS_DEBUG_CPU)
+					if (MIPS_DEBUG_CPU) {
 						Console.WriteLine("COP0         INST      RS RT RD IMM JIMM SHAMT");
 						Console.WriteLine("Instruction: {0}, {1}, {2}, {3}, {4}, {5}, {6}", cop0[context.getRS()].GetType().Name, context.getRS(), context.getRT(), context.getRD(), context.getImm(), context.getJimm(), context.getShamt());
-					#endif
+					}
 
 					// Execute COP0
 					cop0[context.getRS()].execute(ref context);
 					break;
 				}
+				// SPECIAL2 Instructions
+				case 0x1C: {
+					if (MIPS_DEBUG_CPU) {
+						Console.WriteLine("SPECIAL2     INST      RS RT RD IMM JIMM SHAMT");
+						Console.WriteLine("Instruction: {0}, {1}, {2}, {3}, {4}, {5}, {6}", special2[context.getFunct()].GetType().Name, context.getRS(), context.getRT(), context.getRD(), context.getImm(), context.getJimm(), context.getShamt());
+					}
+
+					// Execute SPECIAL2
+					special2[context.getFunct()].execute(ref context);
+					break;
+				}
+				// SPECIAL3 Instructions
+				case 0x1F: {
+					if (MIPS_DEBUG_CPU) {
+						Console.WriteLine("SPECIAL3     INST      RS RT RD IMM JIMM SHAMT");
+						Console.WriteLine("Instruction: {0}, {1}, {2}, {3}, {4}, {5}, {6}", special3[context.getFunct()].GetType().Name, context.getRS(), context.getRT(), context.getRD(), context.getImm(), context.getJimm(), context.getShamt());
+					}
+
+					// Execute SPECIAL3
+					special3[context.getFunct()].execute(ref context);
+					break;
+				}
 				// Opcode Format
 				default: {
-					#if (MIPS_DEBUG_CPU)
+					if (MIPS_DEBUG_CPU) {
 						Console.WriteLine("OPCODE       INST      RS RT RD IMM JIMM SHAMT");
 						Console.WriteLine("Instruction: {0}, {1}, {2}, {3}, {4}, {5}, {6}", opcode[context.getOpcode()].GetType().Name, context.getRS(), context.getRT(), context.getRD(), context.getImm(), context.getJimm(), context.getShamt());
-					#endif
+					}
 
 					// Execute Opcode
 					opcode[context.getOpcode()].execute(ref context);
@@ -627,13 +679,6 @@ namespace Standalone_MIPS_Emulator {
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		private UInt32 readBits(UInt32 value, UInt32 mask, Int32 shift) {
 			return (UInt32)((value & mask) >> shift);
-		}
-
-		// Convenience Function
-		// Write bits
-		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		private UInt32 writeBits(UInt32 dst, UInt32 src, byte shift) {
-			return (UInt32)((dst) | (src << shift));
 		}
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -659,9 +704,9 @@ namespace Standalone_MIPS_Emulator {
 						if (count == 4) {
 							UInt32 word = byteArrayToUInt32(array);
 							
-							#if (MIPS_DEBUG_CPU)
+							if (MIPS_DEBUG_CPU) {
 								Console.WriteLine("address: 0x{0:X}      = 0x{1:X}", address, word);
-							#endif
+							}
 							
 							loadText(address, word);
 							address += 4;
@@ -669,9 +714,9 @@ namespace Standalone_MIPS_Emulator {
 						}
 					}
 				}
-				#if (MIPS_DEBUG_CPU)
+				if (MIPS_DEBUG_CPU) {
 					Console.WriteLine("File Loaded");
-				#endif
+				}
 			} catch (Exception e) {
 				Console.WriteLine("Error: " + e.Message);
 			}
@@ -691,9 +736,9 @@ namespace Standalone_MIPS_Emulator {
 			// Set Program Counter
 			PC.setValue(address);
 
-			#if (MIPS_DEBUG_CPU)
+			if (MIPS_DEBUG_CPU) {
 				Console.WriteLine("ELF Entry Point: 0x{0:X}", address);
-			#endif
+			}
 			
 			// Load all Prog Sections
 			foreach (var section in elfloader.GetSections<ELFSharp.ELF.Sections.ProgBitsSection<uint>>()) {
@@ -703,9 +748,9 @@ namespace Standalone_MIPS_Emulator {
 				else {
 					address = section.LoadAddress;
 					
-					#if (MIPS_DEBUG_CPU)
+					if (MIPS_DEBUG_CPU) {
 						Console.WriteLine("Section: {0}         0x{1:X}", section.Name, address);
-					#endif
+					}
 					
 					uint count = 0;
 					byte[] array = new byte[4];
@@ -716,10 +761,6 @@ namespace Standalone_MIPS_Emulator {
 						if (count == 4) {
 							UInt32 word = byteArrayToUInt32(array);
 							loadText(address, word);
-							
-							#if (MIPS_DEBUG_CPU)
-								//Console.WriteLine("address: 0x{0:X}      = 0x{1:X}", address, word);
-							#endif
 							
 							address += 4;
 							count = 0;
@@ -737,6 +778,120 @@ namespace Standalone_MIPS_Emulator {
 			word |= (UInt32)array[2] << 8;
 			word |= (UInt32)array[3];
 			return word;
+		}
+
+		private void checkConsole() {
+			if (breakpoint_active && (this.PC.getValue() == breakpoint)) {
+				Console.WriteLine("===Breakpoint===");
+				Console.WriteLine("PC     = 0x{0:X}", PC.getValue());
+				Console.WriteLine("IR     = 0x{0:X}", IR.getValue());
+				step = false;
+				waitForInput();
+			}
+			else if (step) {
+				step = false;
+				waitForInput();
+			}
+			else if (Console.KeyAvailable) {
+				ConsoleKeyInfo key = Console.ReadKey(true);
+				switch(key.Key) {
+					case ConsoleKey.B: {
+						waitForInput();
+						break;
+					}
+					default: {
+						break;
+					}
+				}
+			}
+		}
+
+		private void waitForInput() {
+			String input = "";
+			bool resume = false;
+			while (!resume) {
+				Console.WriteLine("");
+				Console.Write("> ");
+				input = Console.ReadLine();
+				if (input == "") {
+					input = lastcmd;
+					Console.WriteLine("> " + lastcmd);
+				}
+				switch(input) {
+					case "breakpoint": {
+						Console.WriteLine("addr: ");
+						input = Console.ReadLine();
+						breakpoint = Convert.ToUInt32(input, 16);
+						breakpoint_active = true;
+						Console.WriteLine("Breakpoint Set");
+						break;
+					}
+					case "debug": {
+						MIPS_DEBUG_CPU = !MIPS_DEBUG_CPU;
+						Console.WriteLine("Debugging now " + MIPS_DEBUG_CPU);
+						break;
+					}
+					case "pc": {
+						Console.WriteLine("PC     = 0x{0:X}", PC.getValue());
+						Console.WriteLine("IR     = 0x{0:X}", IR.getValue());
+						break;
+					}
+					case "gpr": {
+						printGPRRegisters();
+						break;
+					}
+					case "cop0": {
+						printCPC0Registers();
+						break;
+					}
+					case "stack": {
+						if ((registerFile[29].getValue() - registerFile[30].getValue()) > 0x010000) {
+							Console.WriteLine("Frame Pointer Unused");
+						}
+						else {
+							Console.WriteLine("===Stack Frame===");
+							for (UInt32 i=registerFile[29].getValue(); i > registerFile[30].getValue(); i-=4) {
+								Console.WriteLine("0x{0:X}", mainMemory.ReadWord(i));
+							}
+							Console.WriteLine("===End Frame===");
+						}
+						break;
+					}
+					case "step": {
+						step = true;
+						resume = true;
+						break;
+					}
+					case "continue": {
+						step = false;
+						resume = true;
+						break;
+					}
+					case "quit": {
+						System.Environment.Exit(0);
+						break;
+					}
+					case "help": {
+						Console.WriteLine("Command List:");
+						Console.WriteLine("breakpoint - Set a breakpoint");
+						Console.WriteLine("debug - Toggle verbose debugging");
+						Console.WriteLine("pc - Show PC and IR");
+						Console.WriteLine("gpr - Show General Purpose Registers");
+						Console.WriteLine("cop0 - Show Coprocessor 0 Registers");
+						Console.WriteLine("stack - Show current stack frame");
+						Console.WriteLine("step - Step CPU execution one cycle");
+						Console.WriteLine("continue - Continue CPU execution");
+						Console.WriteLine("help - You're reading it");
+						Console.WriteLine("quit - Exit program");
+						break;
+					}
+					default: {
+						Console.WriteLine("Unrecognized command. Type 'help'");
+						break;
+					}
+				}
+				lastcmd = input;
+			}
 		}
 
 		// Print out all GPRs and HI/LO Registers sadistically

@@ -24,8 +24,13 @@ BLTZL
 BNE
 BNEL
 BREAK
+CLO
+CLZ
+DI
 DIV
 DIVU
+EI
+EXT
 J
 JAL
 JALR
@@ -51,7 +56,7 @@ NOR
 OR
 ORI
 SB
-SC
+SC - Partial
 SH
 SLL
 SLLV
@@ -88,11 +93,10 @@ BC2T
 BC2TL
 C.cond.fmt
 CACHE
+CEIL.L.fmt
 CEIL.W.fmt
 CFC1
 CFC2
-CLO
-CLZ
 COP2
 CTC1
 CTC2
@@ -104,12 +108,9 @@ CVT.S.PL
 CVT.S.PU
 CVT.W.fmt
 DERET
-DI
 DIV.fmt
-EHB
-EI
+EHB - Interpreted as SLL r0, r0, 3 (nop)
 ERET
-EXT
 FLOOR.L.fmt
 FLOOR.W.fmt
 INS
@@ -119,7 +120,7 @@ JR.HB
 LDC1
 LDC2
 LDXC1
-LL
+LL - Partial
 LUXC1
 LWC1
 LWC2
@@ -173,7 +174,6 @@ SDC2
 SDXC1
 SEB
 SEH
-
 SQRT.fmt
 SSNOP - Decodes as SLL
 SUB.fmt
