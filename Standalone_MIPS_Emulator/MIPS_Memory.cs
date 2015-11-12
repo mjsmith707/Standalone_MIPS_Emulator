@@ -18,36 +18,65 @@ using System.Collections;
 // Does not support virtual memory.
 namespace Standalone_MIPS_Emulator {
 	public class MIPS_Memory {
-
 		// Physical Frame Table
 		private Hashtable pagetable;
 		private const byte defaultflags = 0x0;
 
+		// MMIO Device Table
+		private Hashtable devicetable;
+
 		// Default Constructor
 		public MIPS_Memory () {
 			pagetable = new Hashtable();
+			devicetable = new Hashtable();
 		}
 
 		// Checks if the frame table contains a given frame
-		private bool pageExists(UInt32 address) {
+		private bool pageExists(uint address) {
 			return pagetable.ContainsKey(address&0xFFFFF000);
 		}
 
+		// Checks if a device has registered this address
+		private bool deviceExists(uint address) {
+			return devicetable.ContainsKey(address);
+		}
+
+		// Attaches a device to its given range of addresses
+		// and calls its initializer
+		public bool attachDevice(MIPS_MemoryMappedIO device) {
+			foreach(uint address in device.getAddresses()) {
+				if (!devicetable.ContainsKey(address)) {
+					devicetable.Add(address, device);
+				}
+				else {
+					return false;
+				}
+			}
+			device.initDevice();
+			return true;
+		}
+
 		// Read a single byte
-		public byte ReadByte(UInt32 address) {
+		public byte ReadByte(uint address) {
+			// Check if a MMIO device has claimed this address
+			if (deviceExists(address)) {
+				MIPS_MemoryMappedIO device = (MIPS_MemoryMappedIO)devicetable[address];
+				return device.ReadByte(address);
+			}
 			// If the physical frame doesn't exist
 			// create a new one full of zeroes.
-			if (!pageExists(address)) {
+			else {
+				if (!pageExists(address)) {
 				pagetable.Add(address&0xFFFFF000, new MIPS_MemoryPage(address, defaultflags));
+				}
+				MIPS_MemoryPage page1 = (MIPS_MemoryPage)pagetable[address&0xFFFFF000];
+				return page1.readByte(address);
 			}
-
-			MIPS_MemoryPage page1 = (MIPS_MemoryPage)pagetable[address&0xFFFFF000];
-			return page1.readByte(address);
 		}
 
 		// Read two bytes
-		public UInt16 ReadHalf(UInt32 address) {
-			UInt16 half = 0;
+		public ushort ReadHalf(uint address) {
+			ushort half = 0;
 
 			half = ReadByte(address);
 			half <<= 8;
@@ -57,8 +86,8 @@ namespace Standalone_MIPS_Emulator {
 		}
 
 		// Read four bytes
-		public UInt32 ReadWord(UInt32 address) {
-			UInt32 word = 0;
+		public uint ReadWord(uint address) {
+			uint word = 0;
 
 			word = ReadByte(address);
 			word <<= 8;
@@ -72,7 +101,7 @@ namespace Standalone_MIPS_Emulator {
 		}
 
 		// Store a single byte
-		public void StoreByte(UInt32 address, byte value) {
+		public void StoreByte(uint address, byte value) {
 			// If the physical frame doesn't exist
 			// create a new one.
 			if (!pageExists(address)) {
@@ -84,13 +113,13 @@ namespace Standalone_MIPS_Emulator {
 		}
 
 		// Store two bytes
-		public void StoreHalf(UInt32 address, UInt16 value) {
+		public void StoreHalf(uint address, ushort value) {
 			StoreByte(address, (byte)(value >> 8));
 			StoreByte(address+1, (byte)(value));
 		}
 
 		// Store four bytes
-		public void StoreWord(UInt32 address, UInt32 value) {
+		public void StoreWord(uint address, uint value) {
 			StoreByte(address, (byte)(value >> 24));
 			StoreByte(address+1, (byte)(value >> 16));
 			StoreByte(address+2, (byte)(value >> 8));

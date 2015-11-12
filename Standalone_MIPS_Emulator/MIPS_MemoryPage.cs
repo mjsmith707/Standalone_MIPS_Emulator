@@ -18,25 +18,25 @@ using System;
 namespace Standalone_MIPS_Emulator {
 	public class MIPS_MemoryPage {
 		// 4096 Byte Page Size
-		private const UInt32 pagesize = 0x00001000;
-		private const UInt32 pagemask = 0x00000FFF;
+		private const uint pagesize = 0x00001000;
+		private const uint pagemask = 0x00000FFF;
 
 		// Page members
-		private UInt32 addrbase;
+		private uint addrbase;
 		private byte flags;
 		private byte[] memory;
 
-		public MIPS_MemoryPage (UInt32 addrbase, byte flags) {
+		public MIPS_MemoryPage (uint addrbase, byte flags) {
 			this.addrbase = addrbase;
 			this.flags = flags;
 			this.memory = new byte[pagesize];
 		}
 
-		public byte readByte(UInt32 address) {
+		public byte readByte(uint address) {
 			return memory[(address&pagemask)];
 		}
 
-		public void writeByte(UInt32 address, byte value) {
+		public void writeByte(uint address, byte value) {
 			memory[(address&pagemask)] = value;
 		}
 	}

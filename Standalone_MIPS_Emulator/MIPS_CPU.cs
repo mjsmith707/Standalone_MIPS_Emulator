@@ -49,30 +49,30 @@ using System.Timers;
 namespace Standalone_MIPS_Emulator {
 	public class MIPS_CPU {
 		// Back to Debug Var
-		private bool MIPS_DEBUG_CPU = false;
+		private bool MIPS_DEBUG_CPU = true;
 
 		private bool breakpoint_active = false;
-		private UInt32 breakpoint = 0x0;
+		private uint breakpoint = 0x0;
 
 		private bool step = true;
 		private string lastcmd = "";
 
 		// Decoder Constants
-		private const UInt32 OPCODEMASK = 0xFC000000;
+		private const uint OPCODEMASK = 0xFC000000;
 		private const byte OPCODESHIFT 	= 26;
-		private const UInt32 RSMASK 	= 0x03E00000;
+		private const uint RSMASK 	= 0x03E00000;
 		private const byte RSSHIFT 		= 21;
-		private const UInt32 RTMASK 	= 0x001F0000;
+		private const uint RTMASK 	= 0x001F0000;
 		private const byte RTSHIFT 		= 16;
-		private const UInt32 RDMASK 	= 0x0000F800;
+		private const uint RDMASK 	= 0x0000F800;
 		private const byte RDSHIFT 		= 11;
-		private const UInt32 SHAMTMASK 	= 0x000007C0;
+		private const uint SHAMTMASK 	= 0x000007C0;
 		private const byte SHAMTSHIFT 	= 6;
-		private const UInt32 FUNCTMASK 	= 0x0000003F;
+		private const uint FUNCTMASK 	= 0x0000003F;
 		private const byte FUNCTSHIFT 	= 0;
-		private const UInt32 IMMMASK 	= 0x0000FFFF;
+		private const uint IMMMASK 	= 0x0000FFFF;
 		private const byte IMMSHIFT 	= 0;
-		private const UInt32 JIMMMASK 	= 0x03FFFFFF;
+		private const uint JIMMMASK 	= 0x03FFFFFF;
 		private const byte JIMMSHIFT 	= 0;
 
 		// CPU Components
@@ -91,6 +91,7 @@ namespace Standalone_MIPS_Emulator {
 		private MIPS_Register lo;
 		public UInt64 cyclecount;
 		private MIPS_Memory mainMemory;
+		private UART8250 com0;
 		private bool branch;
 		private MIPS_Boolean branchDelay;
 		private MIPS_Register branchTarget;
@@ -99,27 +100,27 @@ namespace Standalone_MIPS_Emulator {
 		private ConcurrentQueue<MIPS_Exception> interrupts;
 
 		// Coprocessor Register Masks
-		private const UInt32 STATUS_BEV_MASK = 0x400000;
+		private const uint STATUS_BEV_MASK = 0x400000;
 		private const byte STATUS_BEV_SHIFT = 22;
-		private const UInt32 STATUS_IM_MASK = 0x8000;
+		private const uint STATUS_IM_MASK = 0x8000;
 		private const byte STATUS_IM_SHIFT = 8;
-		private const UInt32 STATUS_IE_MASK = 0x1;
+		private const uint STATUS_IE_MASK = 0x1;
 		private const byte STATUS_IE_SHIFT = 0;
-		private const UInt32 STATUS_EXL_MASK = 0x00000010;
+		private const uint STATUS_EXL_MASK = 0x00000010;
 		private const byte STATUS_EXL_SHIFT = 0x1;
-		private const UInt32 STATUS_ERL_MASK = 0x00000100;
+		private const uint STATUS_ERL_MASK = 0x00000100;
 		private const byte STATUS_ERL_SHIFT = 0x2;
-		private const UInt32 CAUSE_BD_MASK = 0x80000000;
+		private const uint CAUSE_BD_MASK = 0x80000000;
 		private const byte CAUSE_BD_SHIFT = 31;
-		private const UInt32 CAUSE_CE_MASK = 0x30000000;
+		private const uint CAUSE_CE_MASK = 0x30000000;
 		private const byte CAUSE_CE_SHIFT = 28;
-		private const UInt32 CAUSE_IV_MASK = 0x800000;
+		private const uint CAUSE_IV_MASK = 0x800000;
 		private const byte CAUSE_IV_SHIFT = 23;
-		private const UInt32 CAUSE_IP_MASK = 0x7C00;
+		private const uint CAUSE_IP_MASK = 0x7C00;
 		private const byte CAUSE_IP_SHIFT = 10;
-		private const UInt32 CAUSE_IPRQ_MASK = 0x300;
+		private const uint CAUSE_IPRQ_MASK = 0x300;
 		private const byte CAUSE_IPRQ_SHIFT = 8;
-		private const UInt32 CAUSE_EXCCODE_MASK = 0x7C;
+		private const uint CAUSE_EXCCODE_MASK = 0x7C;
 		private const byte CAUSE_EXCCODE_SHIFT = 2;
 
 
@@ -162,6 +163,11 @@ namespace Standalone_MIPS_Emulator {
 
 			// Initialize Memory
 			mainMemory = new MIPS_Memory();
+
+			// Initialize UART
+			// This, memory etc, will all be moved out of CPU someday
+			com0 = new UART8250();
+			mainMemory.attachDevice(com0);
 
 			// Initialize Instruction Context
 			context = new MIPS_InstructionContext(ref mainMemory, ref registerFile, ref PC, ref hi, ref lo, ref branchTarget, ref branchDelay, ref coprocessors);
@@ -323,11 +329,91 @@ namespace Standalone_MIPS_Emulator {
 					// Simulation Error
 					// Stop FDX Loop
 					Console.WriteLine("Exception: " + e.Message);
+					Console.WriteLine("Cycle" + "    = {0}", cyclecount);
+					Console.WriteLine("PC     = 0x{0:X}", PC.getValue());
+					Console.WriteLine("IR     = 0x{0:X}", IR.getValue());
 					printGPRRegisters();
 					printCPC0Registers();
 					return;
 				}
 			}
+		}
+
+		// Single Step Function for Unit Testing
+		public void singleStep() {
+			try {
+					// Service a pending interrupt (if any)
+					serviceints();
+
+					// Fetch next instruction
+					fetch();
+
+					// Decode instruction
+					decode();
+
+					// Execute instruction
+					execute();
+
+					// Update cycle counter
+					// This is _not_ a cop0 performance counter
+					cyclecount++;
+				}
+				catch (MIPS_Exception e) {
+					// Catch Internal Interrupts/Exceptions
+					// Enqueue immediately
+					interrupts.Enqueue(e);
+				}
+				catch (Exception e) {
+					// Simulation Error
+					// Stop FDX Loop
+					Console.WriteLine("Exception: " + e.Message);
+					Console.WriteLine("Cycle" + "    = {0}", cyclecount);
+					Console.WriteLine("PC     = 0x{0:X}", PC.getValue());
+					Console.WriteLine("IR     = 0x{0:X}", IR.getValue());
+					printGPRRegisters();
+					printCPC0Registers();
+					return;
+				}
+		}
+
+		// Register Accessor for Unit Testing
+		public uint getRegister(uint idx) {
+			return registerFile[idx].getValue();
+		}
+
+		// HI Register Accessor for Unit Testing
+		public uint getHi() {
+			return hi.getValue();
+		}
+
+		// LO Register Accessor for Unit Testing
+		public uint getLo() {
+			return lo.getValue();
+		}
+
+		// Word Memory Accessor for Unit Testing
+		public uint getWord(uint addr) {
+			return mainMemory.ReadWord(addr);
+		}
+
+		// Half Memory Accessor for Unit Testing
+		public ushort getHalf(uint addr) {
+			return mainMemory.ReadHalf(addr);
+		}
+
+		// Byte Memory Accessor for Unit Testing
+		public Byte getByte(uint addr) {
+			return mainMemory.ReadByte(addr);
+		}
+
+		// Program Counter Modifier for Unit Testing
+		public void setPC(uint addr) {
+			PC.setValue(addr);
+		}
+
+		// Program Counter Accessor for Unit Testing
+		public uint getPC() {
+			return PC.getValue();
 		}
 
 		// Service enqueued interrupts/exceptions
@@ -360,7 +446,7 @@ namespace Standalone_MIPS_Emulator {
 
 					}
 					// Test if Status Register Interrupt Enable is on
-					else if (readBits(coprocessors [0].getRegister(12, 0), STATUS_IM_MASK, ((Int32)e.getIntNumber () - 1)) == 0) {
+					else if (readBits(coprocessors [0].getRegister(12, 0), STATUS_IM_MASK, ((int)e.getIntNumber () - 1)) == 0) {
 						// Interrupt disabled
 						// FIXME: Test for unmaskable
 						return;
@@ -375,7 +461,7 @@ namespace Standalone_MIPS_Emulator {
 				// Combined Interrupt/Exception Handler
 				// mips vol3 pg 24
 
-				UInt32 vectorOffset = 0;
+				uint vectorOffset = 0;
 				// if StatusEXL = 0
 				if (readBits(coprocessors[0].getRegister(12, 0), STATUS_EXL_MASK, STATUS_EXL_SHIFT) == 0) {
 					if (branchDelay.getValue()) {
@@ -418,7 +504,7 @@ namespace Standalone_MIPS_Emulator {
 				coprocessors[0].setRegisterHW(13, 0, (coprocessors[0].getRegister(13, 0) & (~CAUSE_CE_MASK)));
 
 				// CauseExcCode = ExceptionType
-				coprocessors[0].setRegisterHW(13, 0, (coprocessors[0].getRegister(13, 0) | (CAUSE_EXCCODE_MASK & (UInt32)e.getCode())));
+				coprocessors[0].setRegisterHW(13, 0, (coprocessors[0].getRegister(13, 0) | (CAUSE_EXCCODE_MASK & (uint)e.getCode())));
 
 				// StatusEXL = 1
 				coprocessors[0].setRegisterHW(12, 0, (coprocessors[0].getRegister(12, 0) | STATUS_EXL_MASK));
@@ -566,8 +652,8 @@ namespace Standalone_MIPS_Emulator {
 			byte rd 		= (byte)((IR.getValue() & RDMASK) >> RDSHIFT);
 			byte shamt 		= (byte)((IR.getValue() & SHAMTMASK) >> SHAMTSHIFT);
 			byte functc 	= (byte)((IR.getValue() & FUNCTMASK) >> FUNCTSHIFT);
-			UInt16 imm 		= (UInt16)((IR.getValue() & IMMMASK) >> IMMSHIFT);
-			UInt32 jimm 	= (UInt32)((IR.getValue() & JIMMMASK) >> JIMMSHIFT);
+			ushort imm 		= (ushort)((IR.getValue() & IMMMASK) >> IMMSHIFT);
+			uint jimm 	= (uint)((IR.getValue() & JIMMMASK) >> JIMMSHIFT);
 
 			// Store into the Instruction Context
 			context.setContext(opcodec, rs, rt, rd, shamt, functc, imm, jimm);
@@ -670,15 +756,15 @@ namespace Standalone_MIPS_Emulator {
 		// Convenience Function
 		// Returns masked bits downshifted from a value (i.e. register)
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		private UInt32 readBits(UInt32 value, UInt32 mask, byte shift) {
-			return (UInt32)((value & mask) >> shift);
+		private uint readBits(uint value, uint mask, byte shift) {
+			return (uint)((value & mask) >> shift);
 		}
 
 		// Convenience Function Integer Edition
 		// Returns masked bits downshifted from a value (i.e. register)
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		private UInt32 readBits(UInt32 value, UInt32 mask, Int32 shift) {
-			return (UInt32)((value & mask) >> shift);
+		private uint readBits(uint value, uint mask, int shift) {
+			return (uint)((value & mask) >> shift);
 		}
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -688,12 +774,12 @@ namespace Standalone_MIPS_Emulator {
 		}
 
 		// Inserts given word at address in memory
-		public void loadText(UInt32 address, UInt32 word) {
+		public void loadText(uint address, uint word) {
 			mainMemory.StoreWord(address, word);
 		}
 
 		// Reads bare metal binary file into memory at address
-		public void loadFile(UInt32 address, String filename) {
+		public void loadFile(uint address, String filename) {
 			try {
 				using (BinaryReader reader = new BinaryReader(File.Open(filename, FileMode.Open))) {
 					uint count = 0;
@@ -702,7 +788,7 @@ namespace Standalone_MIPS_Emulator {
 						array[count] = reader.ReadByte();
 						count++;
 						if (count == 4) {
-							UInt32 word = byteArrayToUInt32(array);
+							uint word = byteArrayTouint(array);
 							
 							if (MIPS_DEBUG_CPU) {
 								Console.WriteLine("address: 0x{0:X}      = 0x{1:X}", address, word);
@@ -759,7 +845,7 @@ namespace Standalone_MIPS_Emulator {
 						array[count] = inst;
 						count++;
 						if (count == 4) {
-							UInt32 word = byteArrayToUInt32(array);
+							uint word = byteArrayTouint(array);
 							loadText(address, word);
 							
 							address += 4;
@@ -771,12 +857,12 @@ namespace Standalone_MIPS_Emulator {
 		}
 
 		// No union support so here we are.
-		// Joins 4 byte array into UInt32
-		private UInt32 byteArrayToUInt32(byte[] array) {
-			UInt32 word = (UInt32)array[0] << 24;
-			word |= (UInt32)array[1] << 16;
-			word |= (UInt32)array[2] << 8;
-			word |= (UInt32)array[3];
+		// Joins 4 byte array into uint
+		private uint byteArrayTouint(byte[] array) {
+			uint word = (uint)array[0] << 24;
+			word |= (uint)array[1] << 16;
+			word |= (uint)array[2] << 8;
+			word |= (uint)array[3];
 			return word;
 		}
 
@@ -850,7 +936,7 @@ namespace Standalone_MIPS_Emulator {
 						}
 						else {
 							Console.WriteLine("===Stack Frame===");
-							for (UInt32 i=registerFile[29].getValue(); i > registerFile[30].getValue(); i-=4) {
+							for (uint i=registerFile[29].getValue(); i > registerFile[30].getValue(); i-=4) {
 								Console.WriteLine("0x{0:X}", mainMemory.ReadWord(i));
 							}
 							Console.WriteLine("===End Frame===");

@@ -29,7 +29,7 @@ namespace Standalone_MIPS_Emulator {
 		private REGBitRW[] bitfields;
 
 		// Integer Register
-		private UInt32 register;
+		private uint register;
 
 		// Default Constructor
 		public MIPS_CPC0Register() {
@@ -37,7 +37,7 @@ namespace Standalone_MIPS_Emulator {
 		}
 
 		// Parameterized Constructor
-		public MIPS_CPC0Register(UInt32 value, UInt32 mask1, UInt32 mask2) {
+		public MIPS_CPC0Register(uint value, uint mask1, uint mask2) {
 			this.register = value;
 			this.bitfields = new REGBitRW[32];
 			this.setRWMask(mask1, mask2);
@@ -49,12 +49,12 @@ namespace Standalone_MIPS_Emulator {
 		// Mask1: 0111
 		// Mask2: 0011
 		// LOCK bit3, READ bit 2, READWRITE bit 1, READWRITE bit 0
-		public void setRWMask(UInt32 mask1, UInt32 mask2) {
+		public void setRWMask(uint mask1, uint mask2) {
 			byte value1 = 0;
 			byte value2 = 0;
-			const UInt32 bitmask = 0x1;
+			const uint bitmask = 0x1;
 
-			for (Int32 i=0; i<31; i++) {
+			for (int i=0; i<31; i++) {
 				value1 = (byte)((mask1&(bitmask << i)) >> i);
 				value2 = (byte)((mask2&(bitmask << i)) >> i);
 				if ((value1 == 0) && (value2 == 0)) {
@@ -75,7 +75,7 @@ namespace Standalone_MIPS_Emulator {
 		// Reading LOCKED field always returns 0
 		// but if we wrote setValue and our initializer values correctly
 		// we should be just fine.
-		public UInt32 getValue() {
+		public uint getValue() {
 			return this.register;
 		}
 
@@ -84,17 +84,17 @@ namespace Standalone_MIPS_Emulator {
 		// Software can Write to READWRITE bits but not LOCKED or READ
 		// Writing to LOCKED field is UNDEFINED by architecture
 		// but we'll just ignore it too.
-		public void setValue(UInt32 value, bool hwmode) {
-			UInt32 bit1 = 0;
-			UInt32 bit2 = 0;
-			UInt32 newvalue = 0;
-			const UInt32 mask = 0x01;
+		public void setValue(uint value, bool hwmode) {
+			uint bit1 = 0;
+			uint bit2 = 0;
+			uint newvalue = 0;
+			const uint mask = 0x01;
 
 			// Read each bit and compare to their bitfield mask value
 			// If permissible. Modify the newvalue.
 			// bit1 is the current bit in the register
 			// bit2 is the current bit in the parameter
-			for (Int32 i = 0; i < 32; i++) {
+			for (int i = 0; i < 32; i++) {
 				bit1 = (this.register & (mask << i));
 				bit2 = (value & (mask << i));
 				if (bitfields[i] == REGBitRW.LOCKED) {

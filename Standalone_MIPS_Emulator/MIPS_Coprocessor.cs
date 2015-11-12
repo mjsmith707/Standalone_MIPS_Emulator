@@ -18,12 +18,12 @@ using System;
 namespace Standalone_MIPS_Emulator {
 	public abstract class MIPS_Coprocessor {
 		// Integer Register abstract function
-		public abstract UInt32 getRegister(byte register, byte sel);
+		public abstract uint getRegister(byte register, byte sel);
 
 		// Integer Register abstract software setter
-		public abstract void setRegister(byte register, byte sel, UInt32 value);
+		public abstract void setRegister(byte register, byte sel, uint value);
 
 		// Integer Register abstract hardware setter
-		public abstract void setRegisterHW(byte register, byte sel, UInt32 value);
+		public abstract void setRegisterHW(byte register, byte sel, uint value);
 	}
 }

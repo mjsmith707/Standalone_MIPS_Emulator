@@ -1,0 +1,8 @@
+/Users/msmith/Projects/Standalone_MIPS_Emulator/Standalone_MIPS_Emulator_UnitTests/obj/Release/.NETFramework,Version=v4.5.AssemblyAttribute.cs
+/Users/msmith/Projects/Standalone_MIPS_Emulator/Standalone_MIPS_Emulator_UnitTests/bin/Release/Standalone_MIPS_Emulator_UnitTests.dll.mdb
+/Users/msmith/Projects/Standalone_MIPS_Emulator/Standalone_MIPS_Emulator_UnitTests/bin/Release/Standalone_MIPS_Emulator_UnitTests.dll
+/Users/msmith/Projects/Standalone_MIPS_Emulator/Standalone_MIPS_Emulator_UnitTests/obj/Release/Standalone_MIPS_Emulator_UnitTests.dll
+/Users/msmith/Projects/Standalone_MIPS_Emulator/Standalone_MIPS_Emulator_UnitTests/obj/Release/Standalone_MIPS_Emulator_UnitTests.dll.mdb
+/Users/msmith/Projects/Standalone_MIPS_Emulator/Standalone_MIPS_Emulator_UnitTests/bin/Release/nunit.framework.dll
+/Users/msmith/Projects/Standalone_MIPS_Emulator/Standalone_MIPS_Emulator_UnitTests/bin/Release/Standalone_MIPS_Emulator.exe
+/Users/msmith/Projects/Standalone_MIPS_Emulator/Standalone_MIPS_Emulator_UnitTests/bin/Release/ELFSharp.dll

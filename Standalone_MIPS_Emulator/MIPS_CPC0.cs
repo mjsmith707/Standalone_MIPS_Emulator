@@ -288,15 +288,15 @@ namespace Standalone_MIPS_Emulator {
 			registerFile[31,0] = new MIPS_CPC0Register(0x0, 0x0, 0x0);
 		}
 
-		public override UInt32 getRegister(byte register, byte sel) {
+		public override uint getRegister(byte register, byte sel) {
 			return this.registerFile[register,sel].getValue();
 		}
 
-		public override void setRegister(byte register, byte sel, UInt32 value) {
+		public override void setRegister(byte register, byte sel, uint value) {
 			this.registerFile[register,sel].setValue(value, false);
 		}
 
-		public override void setRegisterHW(byte register, byte sel, UInt32 value) {
+		public override void setRegisterHW(byte register, byte sel, uint value) {
 			this.registerFile[register, sel].setValue(value, true);
 		}
 	}

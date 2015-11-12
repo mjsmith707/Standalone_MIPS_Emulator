@@ -23,13 +23,15 @@ namespace Standalone_MIPS_Emulator {
 		public static MIPS_CPU CPU0;
 
 		public static void Main (string[] args) {
+			Console.WriteLine("Starting...");
 			CPU0 = new MIPS_CPU();
 
 			//CPU0.loadFile(0x00000000, "cop0_test.bin");
 			//CPU0.loadFile(0x00000000, "registerload_test.bin");
 			//CPU0.loadFile(0x400550, "a.bin");
-			//CPU0.elfLoader("a.out");
-			CPU0.elfLoader("vmlinux");
+			//CPU0.setPC(0x400550);
+			//CPU0.elfLoader("main.o");
+			CPU0.elfLoader("vmlinux2");
 
 			lastCount = 0;
 			perfTimer = new System.Timers.Timer(60000);

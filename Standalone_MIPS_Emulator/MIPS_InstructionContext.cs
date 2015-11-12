@@ -26,8 +26,8 @@ namespace Standalone_MIPS_Emulator
 		private byte rd;
 		private byte shamt;
 		private byte funct;
-		private UInt16 imm;
-		private UInt32 jimm;
+		private ushort imm;
+		private uint jimm;
 		private MIPS_Memory mainMemory;
 		private MIPS_Register[] registerFile;
 		private MIPS_Register PC;
@@ -58,7 +58,7 @@ namespace Standalone_MIPS_Emulator
 		}
 
 		// Super-setter function
-		public void setContext(byte opcode, byte rs, byte rt, byte rd, byte shamt, byte funct, UInt16 imm, UInt32 jimm) {
+		public void setContext(byte opcode, byte rs, byte rt, byte rd, byte shamt, byte funct, ushort imm, uint jimm) {
 			this.opcode = opcode;
 			this.rs = rs;
 			this.rt = rt;
@@ -125,11 +125,11 @@ namespace Standalone_MIPS_Emulator
 			return this.funct;
 		}
 
-		public UInt16 getImm() {
+		public ushort getImm() {
 			return this.imm;
 		}
 
-		public UInt32 getJimm() {
+		public uint getJimm() {
 			return this.jimm;
 		}
 	}

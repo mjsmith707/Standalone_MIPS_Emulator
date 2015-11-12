@@ -1,4 +1,0 @@
-C:\Users\msmith\Documents\GitHub\Standalone_MIPS_Emulator\Standalone_MIPS_Emulator\bin\x64\Release\Standalone_MIPS_Emulator.exe
-C:\Users\msmith\Documents\GitHub\Standalone_MIPS_Emulator\Standalone_MIPS_Emulator\bin\x64\Release\ELFSharp.dll
-C:\Users\msmith\Documents\GitHub\Standalone_MIPS_Emulator\Standalone_MIPS_Emulator\obj\x64\Release\Standalone_MIPS_Emulator.csprojResolveAssemblyReference.cache
-C:\Users\msmith\Documents\GitHub\Standalone_MIPS_Emulator\Standalone_MIPS_Emulator\obj\x64\Release\Standalone_MIPS_Emulator.exe

@@ -14,10 +14,10 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 using System;
 
 // MIPS GPR Register Class
-// Essentially a UInt32 wrapper plus muting ability.
+// Essentially a uint wrapper plus muting ability.
 namespace Standalone_MIPS_Emulator {
 	public class MIPS_Register {
-		private UInt32 register;
+		private uint register;
 		private Boolean muted;
 
 		// Default Constructor
@@ -27,18 +27,18 @@ namespace Standalone_MIPS_Emulator {
 		}
 
 		// Value Initializing Constructor
-		public MIPS_Register(UInt32 value) {
+		public MIPS_Register(uint value) {
 			this.register = value;
 		}
 
 		// Explicit mutable constructor
-		public MIPS_Register(UInt32 value, Boolean mute) {
+		public MIPS_Register(uint value, Boolean mute) {
 			this.register = value;
 			this.muted = mute;
 		}
 
 		// Mutable register setter
-		public void setValue(UInt32 value) {
+		public void setValue(uint value) {
 			if (muted) {
 				return;
 			}
@@ -47,7 +47,7 @@ namespace Standalone_MIPS_Emulator {
 			}
 		}
 
-		public UInt32 getValue() {
+		public uint getValue() {
 			return this.register;
 		}
 	}

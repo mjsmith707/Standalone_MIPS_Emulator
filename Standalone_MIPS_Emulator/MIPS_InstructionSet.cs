@@ -12,6 +12,7 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 */
 
 using System;
+using System.Runtime.CompilerServices;
 
 namespace Standalone_MIPS_Emulator
 {
@@ -21,37 +22,55 @@ namespace Standalone_MIPS_Emulator
 		public abstract void execute(ref MIPS_InstructionContext context);
 
 		// Sign Extend 32bits
-		public Int32 signExtend32(UInt32 value) {
-			return (Int32)value;
+		public int signExtend32To32(uint value) {
+			return (int)value;
+		}
+
+		public int signExtend16To32(ushort value) {
+			short val = (short)value;
+			int val32 = val;
+			return val32;
+		}
+
+		public int signExtend16To32(short value) {
+			return (int)value;
 		}
 
 		// Sign Extend 16bits
-		public Int16 signExtend16(UInt16 value) {
-			return (Int16)value;
+		public short signExtend16To16(ushort value) {
+			return (short)value;
 		}
 
 		// Zero Extend 32bits
-		public UInt32 zeroExtend32(UInt16 value) {
-			return (UInt32)value;
+		public uint zeroExtend16To32(ushort value) {
+			return (uint)value;
 		}
 
 		// Zero Extend 16bits does nothing??
-		public UInt16 zeroExtend16(UInt16 value) {
-			return (UInt16)value;
+		public ushort zeroExtend16To16(ushort value) {
+			return (ushort)value;
+		}
+
+		// Convenience Wrapper for Unsigned + Signed Arithmetic
+		// C# handles this pretty poorly
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public uint unsigned32Signed32AddSub(uint unsignedVal, int signedVal) {
+			uint result = (signedVal < 0) ? unsignedVal - (uint)(signedVal * (-1)) : unsignedVal + (uint)(signedVal);
+			return result;
 		}
 
 		// Calculate Branch Transfer Address (PC-Relative)
-		public UInt32 calculateBTA(UInt32 branchaddr, UInt16 imm) {
-			Int16 branchoffset = signExtend16(imm);
+		public uint calculateBTA(uint branchaddr, ushort imm) {
+			short branchoffset = signExtend16To16(imm);
 			branchoffset <<= 2;
-			branchaddr += (UInt32)signExtend32((UInt32)branchoffset);
+			branchaddr += (UInt32)branchoffset;
 			return branchaddr;
 		}
 
 		// Calculate Effective Target Address (PC-Region)
-		public UInt32 calculateETA(UInt32 branchaddr, UInt32 jimm) {
+		public uint calculateETA(uint branchaddr, uint jimm) {
 			jimm <<= 2;
-			UInt32 targetaddr = (branchaddr & 0xF0000000);
+			uint targetaddr = (branchaddr & 0xF0000000);
 			targetaddr |= jimm;
 			return targetaddr;
 		}
@@ -61,7 +80,7 @@ namespace Standalone_MIPS_Emulator
 	public class MIPS_SLL : MIPS_Instruction
 	{
 		public override void execute(ref MIPS_InstructionContext context) {
-			UInt32 result = context.getRegisters()[context.getRT()].getValue();
+			uint result = context.getRegisters()[context.getRT()].getValue();
 			result <<= context.getShamt();
 			context.getRegisters()[context.getRD()].setValue(result);
 		}
@@ -71,7 +90,7 @@ namespace Standalone_MIPS_Emulator
 	public class MIPS_SRL : MIPS_Instruction
 	{
 		public override void execute(ref MIPS_InstructionContext context) {
-			UInt32 result = context.getRegisters()[context.getRT()].getValue();
+			uint result = context.getRegisters()[context.getRT()].getValue();
 			result >>= context.getShamt();
 			context.getRegisters()[context.getRD()].setValue(result);
 		}
@@ -81,9 +100,9 @@ namespace Standalone_MIPS_Emulator
 	public class MIPS_SRA : MIPS_Instruction
 	{
 		public override void execute(ref MIPS_InstructionContext context) {
-			UInt32 rt = context.getRegisters()[context.getRT()].getValue();
-			Int32 result = (Int32)rt >> context.getShamt();
-			context.getRegisters()[context.getRD()].setValue((UInt32)result);
+			uint rt = context.getRegisters()[context.getRT()].getValue();
+			int result = (int)rt >> context.getShamt();
+			context.getRegisters()[context.getRD()].setValue((uint)result);
 		}
 	}
 
@@ -92,8 +111,8 @@ namespace Standalone_MIPS_Emulator
 	public class MIPS_SLLV : MIPS_Instruction
 	{
 		public override void execute(ref MIPS_InstructionContext context) {
-			UInt32 result = context.getRegisters()[context.getRT()].getValue();
-			result <<= (Int32)context.getRegisters()[context.getRS()].getValue();
+			uint result = context.getRegisters()[context.getRT()].getValue();
+			result <<= (int)context.getRegisters()[context.getRS()].getValue();
 			context.getRegisters()[context.getRD()].setValue(result);
 		}
 	}
@@ -103,8 +122,8 @@ namespace Standalone_MIPS_Emulator
 	public class MIPS_SRLV : MIPS_Instruction
 	{
 		public override void execute(ref MIPS_InstructionContext context) {
-			UInt32 result = context.getRegisters()[context.getRT()].getValue();
-			result >>= (Int32)context.getRegisters()[context.getRS()].getValue();
+			uint result = context.getRegisters()[context.getRT()].getValue();
+			result >>= (int)context.getRegisters()[context.getRS()].getValue();
 			context.getRegisters()[context.getRD()].setValue(result);
 		}
 	}
@@ -114,9 +133,9 @@ namespace Standalone_MIPS_Emulator
 	public class MIPS_SRAV : MIPS_Instruction
 	{
 		public override void execute(ref MIPS_InstructionContext context) {
-			UInt32 rt = context.getRegisters()[context.getRT()].getValue();
-			Int32 result = (Int32)rt >> (Int32)context.getRegisters()[context.getRS()].getValue();
-			context.getRegisters()[context.getRD()].setValue((UInt32)result);
+			uint rt = context.getRegisters()[context.getRT()].getValue();
+			int result = (int)rt >> (int)context.getRegisters()[context.getRS()].getValue();
+			context.getRegisters()[context.getRD()].setValue((uint)result);
 		}
 	}
 
@@ -219,9 +238,9 @@ namespace Standalone_MIPS_Emulator
 		public override void execute(ref MIPS_InstructionContext context) {
 			unchecked {
 				Int64 result = context.getRegisters()[context.getRS()].getValue();
-				result *= (Int32)context.getRegisters()[context.getRT()].getValue();
-				context.getLO().setValue((UInt32)(result & 0x00000000FFFFFFFF));
-				context.getHI().setValue((UInt32)(result >> 32));
+				result *= (int)context.getRegisters()[context.getRT()].getValue();
+				context.getLO().setValue((uint)(result & 0x00000000FFFFFFFF));
+				context.getHI().setValue((uint)(result >> 32));
 			}
 		}
 	}
@@ -233,8 +252,8 @@ namespace Standalone_MIPS_Emulator
 			unchecked {
 				UInt64 result = context.getRegisters()[context.getRS()].getValue();
 				result *= context.getRegisters()[context.getRT()].getValue();
-				context.getLO().setValue((UInt32)(result & 0x00000000FFFFFFFF));
-				context.getHI().setValue((UInt32)(result >> 32));
+				context.getLO().setValue((uint)(result & 0x00000000FFFFFFFF));
+				context.getHI().setValue((uint)(result >> 32));
 			}
 		}
 	}
@@ -244,11 +263,11 @@ namespace Standalone_MIPS_Emulator
 	{
 		public override void execute(ref MIPS_InstructionContext context) {
 			unchecked {
-				Int32 rs = (Int32)context.getRegisters()[context.getRS()].getValue();
-				Int32 rt = (Int32)context.getRegisters()[context.getRT()].getValue();
+				int rs = (int)context.getRegisters()[context.getRS()].getValue();
+				int rt = (int)context.getRegisters()[context.getRT()].getValue();
 
-				context.getLO().setValue((UInt32)(rs/rt));
-				context.getHI().setValue((UInt32)(rs%rt));
+				context.getLO().setValue((uint)(rs/rt));
+				context.getHI().setValue((uint)(rs%rt));
 			}
 		}
 	}
@@ -258,8 +277,8 @@ namespace Standalone_MIPS_Emulator
 	{
 		public override void execute(ref MIPS_InstructionContext context) {
 			unchecked {
-				UInt32 rs = context.getRegisters()[context.getRS()].getValue();
-				UInt32 rt = context.getRegisters()[context.getRT()].getValue();
+				uint rs = context.getRegisters()[context.getRS()].getValue();
+				uint rt = context.getRegisters()[context.getRT()].getValue();
 
 				context.getLO().setValue((rs/rt));
 				context.getHI().setValue((rs%rt));
@@ -272,10 +291,14 @@ namespace Standalone_MIPS_Emulator
 	{
 		public override void execute(ref MIPS_InstructionContext context) {
 			try {
-				context.getRegisters()[context.getRD()].setValue((UInt32)checked(
-				            base.signExtend32(context.getRegisters()[context.getRS()].getValue())
-				            +
-				            base.signExtend32(context.getRegisters()[context.getRT()].getValue())));
+				int rsval = base.signExtend32To32(context.getRegisters()[context.getRS()].getValue());
+				int rtval = base.signExtend32To32(context.getRegisters()[context.getRT()].getValue());
+
+				checked {
+					rsval += rtval;
+				}
+
+				context.getRegisters()[context.getRD()].setValue((uint)rsval);
 			}
 			catch (System.OverflowException) {
 				// Trigger exception
@@ -302,10 +325,10 @@ namespace Standalone_MIPS_Emulator
 	{
 		public override void execute(ref MIPS_InstructionContext context) {
 			try {
-				context.getRegisters()[context.getRD()].setValue((UInt32)checked(
-				            base.signExtend32(context.getRegisters()[context.getRS()].getValue())
+				context.getRegisters()[context.getRD()].setValue((uint)checked(
+				            base.signExtend32To32(context.getRegisters()[context.getRS()].getValue())
 				            -
-				            base.signExtend32(context.getRegisters()[context.getRT()].getValue())));
+				            base.signExtend32To32(context.getRegisters()[context.getRT()].getValue())));
 			}
 			catch (System.OverflowException) {
 				// Trigger Exception
@@ -364,7 +387,7 @@ namespace Standalone_MIPS_Emulator
 	public class MIPS_NOR : MIPS_Instruction
 	{
 		public override void execute(ref MIPS_InstructionContext context) {
-			UInt32 result = ~(context.getRegisters()[context.getRS()].getValue() | context.getRegisters()[context.getRT()].getValue());
+			uint result = ~(context.getRegisters()[context.getRS()].getValue() | context.getRegisters()[context.getRT()].getValue());
 			context.getRegisters()[context.getRD()].setValue(result);
 		}
 	}
@@ -373,7 +396,7 @@ namespace Standalone_MIPS_Emulator
 	public class MIPS_SLT : MIPS_Instruction
 	{
 		public override void execute(ref MIPS_InstructionContext context) {
-			if ((Int32)context.getRegisters()[context.getRS()].getValue() < (Int32)context.getRegisters()[context.getRT()].getValue()) {
+			if ((int)context.getRegisters()[context.getRS()].getValue() < (int)context.getRegisters()[context.getRT()].getValue()) {
 				context.getRegisters()[context.getRD()].setValue(1);
 			} 
 			else {
@@ -399,7 +422,7 @@ namespace Standalone_MIPS_Emulator
 	public class MIPS_TGE : MIPS_Instruction
 	{
 		public override void execute(ref MIPS_InstructionContext context) {
-			if ((Int32)context.getRegisters()[context.getRS()].getValue() >= (Int32)context.getRegisters()[context.getRT()].getValue()) {
+			if ((int)context.getRegisters()[context.getRS()].getValue() >= (int)context.getRegisters()[context.getRT()].getValue()) {
 				throw new MIPS_Exception(MIPS_Exception.ExceptionCode.TRAP);
 			}
 		}
@@ -419,7 +442,7 @@ namespace Standalone_MIPS_Emulator
 	public class MIPS_TLT : MIPS_Instruction
 	{
 		public override void execute(ref MIPS_InstructionContext context) {
-			if ((Int32)context.getRegisters()[context.getRS()].getValue() < (Int32)context.getRegisters()[context.getRT()].getValue()) {
+			if ((int)context.getRegisters()[context.getRS()].getValue() < (int)context.getRegisters()[context.getRT()].getValue()) {
 				throw new MIPS_Exception(MIPS_Exception.ExceptionCode.TRAP);
 			}
 		}
@@ -439,7 +462,7 @@ namespace Standalone_MIPS_Emulator
 	public class MIPS_TEQ : MIPS_Instruction
 	{
 		public override void execute(ref MIPS_InstructionContext context) {
-			if ((Int32)context.getRegisters()[context.getRS()].getValue() == (Int32)context.getRegisters()[context.getRT()].getValue()) {
+			if ((int)context.getRegisters()[context.getRS()].getValue() == (int)context.getRegisters()[context.getRT()].getValue()) {
 				throw new MIPS_Exception(MIPS_Exception.ExceptionCode.TRAP);
 			}
 		}
@@ -449,7 +472,7 @@ namespace Standalone_MIPS_Emulator
 	public class MIPS_TNE : MIPS_Instruction
 	{
 		public override void execute(ref MIPS_InstructionContext context) {
-			if ((Int32)context.getRegisters()[context.getRS()].getValue() != (Int32)context.getRegisters()[context.getRT()].getValue()) {
+			if ((int)context.getRegisters()[context.getRS()].getValue() != (int)context.getRegisters()[context.getRT()].getValue()) {
 				throw new MIPS_Exception(MIPS_Exception.ExceptionCode.TRAP);
 			}
 		}
@@ -500,7 +523,7 @@ namespace Standalone_MIPS_Emulator
 	public class MIPS_BLEZ : MIPS_Instruction
 	{
 		public override void execute(ref MIPS_InstructionContext context) {
-			if (context.getRegisters()[context.getRS()].getValue() <= 0) {
+			if ((int)context.getRegisters()[context.getRS()].getValue() <= 0) {
 				context.getBranchTarget().setValue(base.calculateBTA(context.getPC().getValue(), context.getImm()));
 				context.setBranchDelay(true);
 			}
@@ -523,10 +546,13 @@ namespace Standalone_MIPS_Emulator
 	{
 		public override void execute(ref MIPS_InstructionContext context) {
 			try {
-				context.getRegisters()[context.getRT()].setValue((UInt32)checked(
-				            base.signExtend32(context.getRegisters()[context.getRS()].getValue())
-				            +
-				            base.signExtend32(context.getImm())));
+					int rsval = base.signExtend32To32(context.getRegisters()[context.getRS()].getValue());
+					int immval = base.signExtend16To32(context.getImm());
+					// C# Will overflow on the (uint)rsval cast. You have got to be kidding me
+					checked {
+						rsval += immval;
+					}
+					context.getRegisters()[context.getRT()].setValue((uint)rsval);
 			}
 			catch (System.OverflowException) {
 				// Trigger Exception
@@ -540,9 +566,11 @@ namespace Standalone_MIPS_Emulator
 	{
 		public override void execute(ref MIPS_InstructionContext context) {
 			unchecked {
-				UInt32 result = context.getRegisters()[context.getRS()].getValue();
-				result += (UInt32)base.signExtend16(context.getImm());
-				context.getRegisters()[context.getRT()].setValue(result);
+				int result = base.signExtend32To32(context.getRegisters()[context.getRS()].getValue());
+				// unsigned + signed hackaround for C#
+				int imm = base.signExtend16To32(context.getImm());
+				result += imm;
+				context.getRegisters()[context.getRT()].setValue((uint)result);
 			}
 		}
 	}
@@ -551,7 +579,7 @@ namespace Standalone_MIPS_Emulator
 	public class MIPS_SLTI : MIPS_Instruction
 	{
 		public override void execute(ref MIPS_InstructionContext context) {
-			if ((Int32)context.getRegisters()[context.getRS()].getValue() < (Int16)base.signExtend16(context.getImm())) {
+			if ((int)context.getRegisters()[context.getRS()].getValue() < base.signExtend16To16(context.getImm())) {
 				context.getRegisters()[context.getRT()].setValue(0x1);
 			}
 			else {
@@ -564,7 +592,7 @@ namespace Standalone_MIPS_Emulator
 	public class MIPS_SLTIU : MIPS_Instruction
 	{
 		public override void execute(ref MIPS_InstructionContext context) {
-			if (context.getRegisters()[context.getRS()].getValue() < (UInt16)base.signExtend16(context.getImm())) {
+			if (context.getRegisters()[context.getRS()].getValue() < (ushort)base.signExtend16To16(context.getImm())) {
 				context.getRegisters()[context.getRT()].setValue(0x1);
 			}
 			else {
@@ -580,7 +608,7 @@ namespace Standalone_MIPS_Emulator
 			context.getRegisters()[context.getRT()].setValue(
 			    context.getRegisters()[context.getRS()].getValue()
 			    &
-			    base.zeroExtend32(context.getImm()));
+			    base.zeroExtend16To32(context.getImm()));
 		}
 	}
 
@@ -591,7 +619,7 @@ namespace Standalone_MIPS_Emulator
 			context.getRegisters()[context.getRT()].setValue(
 			    context.getRegisters()[context.getRS()].getValue()
 			    |
-			    base.zeroExtend32(context.getImm()));
+			    base.zeroExtend16To32(context.getImm()));
 		}
 	}
 
@@ -602,7 +630,7 @@ namespace Standalone_MIPS_Emulator
 			context.getRegisters()[context.getRT()].setValue(
 			    context.getRegisters()[context.getRS()].getValue()
 			    ^
-			    base.zeroExtend32(context.getImm()));
+			    base.zeroExtend16To32(context.getImm()));
 		}
 	}
 
@@ -610,7 +638,7 @@ namespace Standalone_MIPS_Emulator
 	public class MIPS_LUI : MIPS_Instruction
 	{
 		public override void execute(ref MIPS_InstructionContext context) {
-			context.getRegisters()[context.getRT()].setValue((UInt32)((UInt32)context.getImm() << 16));
+			context.getRegisters()[context.getRT()].setValue((uint)((uint)context.getImm() << 16));
 		}
 	}
 
@@ -621,9 +649,9 @@ namespace Standalone_MIPS_Emulator
 			// FIXME: Requires sel field to be zero.... but who cares? Not True?
 			// FIXME: Throws Coprocessor Unusuable, Reserved Instruction
 			const byte selmask = 0x7;
-			byte sel = (byte)(base.zeroExtend16(context.getImm())&selmask);
+			byte sel = (byte)(base.zeroExtend16To16(context.getImm())&selmask);
 			byte cpcregister = (byte)context.getRD();
-			UInt32 value = context.getCoprocessors()[0].getRegister(cpcregister, sel);
+			uint value = context.getCoprocessors()[0].getRegister(cpcregister, sel);
 			context.getRegisters()[context.getRT()].setValue(value);
 		}
 	}
@@ -635,9 +663,9 @@ namespace Standalone_MIPS_Emulator
 			// FIXME: Requires sel field to be zero.... but who cares? Not True?
 			// FIXME: Throws Coprocessor Unusuable, Reserved Instruction
 			const byte selmask = 0x7;
-			byte sel = (byte)(base.zeroExtend16(context.getImm())&selmask);
+			byte sel = (byte)(base.zeroExtend16To16(context.getImm())&selmask);
 
-			UInt32 value = context.getRegisters()[context.getRT()].getValue();
+			uint value = context.getRegisters()[context.getRT()].getValue();
 			context.getCoprocessors()[0].setRegister(context.getRD(), sel, value);
 
 			// Check for Cause register software interrupts IP0/IP1
@@ -698,7 +726,7 @@ namespace Standalone_MIPS_Emulator
 	public class MIPS_BLEZL : MIPS_Instruction
 	{
 		public override void execute(ref MIPS_InstructionContext context) {
-			if (context.getRegisters()[context.getRS()].getValue() <= 0) {
+			if ((int)context.getRegisters()[context.getRS()].getValue() <= 0) {
 				context.getBranchTarget().setValue(base.calculateBTA(context.getPC().getValue(), context.getImm()));
 				context.setBranchDelay(true);
 			} 
@@ -725,9 +753,9 @@ namespace Standalone_MIPS_Emulator
 	public class MIPS_LB : MIPS_Instruction
 	{
 		public override void execute(ref MIPS_InstructionContext context) {
-			Int32 vAddr = base.signExtend16(context.getImm());
-			vAddr += (Int32)context.getRegisters()[context.getRS()].getValue();
-			context.getRegisters()[context.getRT()].setValue(context.getMemory().ReadByte((UInt32)vAddr));
+			int vAddr = base.signExtend16To32(context.getImm());
+			vAddr += (int)context.getRegisters()[context.getRS()].getValue();
+			context.getRegisters()[context.getRT()].setValue(context.getMemory().ReadByte((uint)vAddr));
 		}
 	}
 
@@ -735,16 +763,24 @@ namespace Standalone_MIPS_Emulator
 	public class MIPS_LH : MIPS_Instruction
 	{
 		public override void execute(ref MIPS_InstructionContext context) {
-			Int32 vAddr = base.signExtend16(context.getImm());
-			vAddr += (Int32)context.getRegisters()[context.getRS()].getValue();
-			context.getRegisters()[context.getRT()].setValue(context.getMemory().ReadHalf((UInt32)vAddr));
+			int vAddr = base.signExtend16To32(context.getImm());
+			vAddr += (int)context.getRegisters()[context.getRS()].getValue();
+			context.getRegisters()[context.getRT()].setValue(context.getMemory().ReadHalf((uint)vAddr));
 		}
 	}
 
 	public class MIPS_LWL : MIPS_Instruction
 	{
 		public override void execute(ref MIPS_InstructionContext context) {
-			throw new MIPS_Exception(MIPS_Exception.ExceptionCode.UNIMPLEMENTED);
+			int vAddr = base.signExtend16To32(context.getImm());
+			vAddr += (int)context.getRegisters()[context.getRS()].getValue();
+			short lefthalf = (short)context.getMemory().ReadHalf((uint)vAddr-1);
+			int word = 0x0;
+			word = lefthalf;
+			word <<= 16;
+			uint finalword = (uint)word;
+			finalword &= 0xFFFF0000;	// Probably unnecessary if C# shifts in zeroes
+			context.getRegisters()[context.getRT()].setValue(finalword);
 		}
 	}
 
@@ -752,9 +788,9 @@ namespace Standalone_MIPS_Emulator
 	public class MIPS_LW : MIPS_Instruction
 	{
 		public override void execute(ref MIPS_InstructionContext context) {
-			Int32 vAddr = base.signExtend16(context.getImm());
-			vAddr += (Int32)context.getRegisters()[context.getRS()].getValue();
-			context.getRegisters()[context.getRT()].setValue(context.getMemory().ReadWord((UInt32)vAddr));
+			int vAddr = base.signExtend16To32(context.getImm());
+			vAddr += (int)context.getRegisters()[context.getRS()].getValue();
+			context.getRegisters()[context.getRT()].setValue(context.getMemory().ReadWord((uint)vAddr));
 		}
 	}
 
@@ -762,10 +798,10 @@ namespace Standalone_MIPS_Emulator
 	public class MIPS_LBU : MIPS_Instruction
 	{
 		public override void execute(ref MIPS_InstructionContext context) {
-			UInt16 offset = zeroExtend16(context.getImm());
-			UInt32 address = context.getRegisters()[context.getRD()].getValue();
-			address += (UInt32)offset;
-			UInt32 value = context.getMemory().ReadByte(address);
+			ushort offset = zeroExtend16To16(context.getImm());
+			uint address = context.getRegisters()[context.getRD()].getValue();
+			address += (uint)offset;
+			uint value = context.getMemory().ReadByte(address);
 			context.getRegisters()[context.getRT()].setValue(value);
 		}
 	}
@@ -774,18 +810,23 @@ namespace Standalone_MIPS_Emulator
 	public class MIPS_LHU : MIPS_Instruction
 	{
 		public override void execute(ref MIPS_InstructionContext context) {
-			UInt16 offset = zeroExtend16(context.getImm());
-			UInt32 address = context.getRegisters()[context.getRD()].getValue();
-			address += (UInt32)offset;
-			UInt32 value = context.getMemory().ReadHalf(address);
+			ushort offset = zeroExtend16To16(context.getImm());
+			uint address = context.getRegisters()[context.getRD()].getValue();
+			address += (uint)offset;
+			uint value = context.getMemory().ReadHalf(address);
 			context.getRegisters()[context.getRT()].setValue(value);
 		}
 	}
 
+	// Load Word Right
 	public class MIPS_LWR : MIPS_Instruction
 	{
 		public override void execute(ref MIPS_InstructionContext context) {
-			throw new MIPS_Exception(MIPS_Exception.ExceptionCode.UNIMPLEMENTED);
+			int vAddr = base.signExtend16To32(context.getImm());
+			vAddr += (int)context.getRegisters()[context.getRS()].getValue();
+			short righthalf = (short)context.getMemory().ReadHalf((uint)vAddr-1);
+			int word = righthalf;
+			context.getRegisters()[context.getRT()].setValue((uint)word);
 		}
 	}
 
@@ -793,9 +834,9 @@ namespace Standalone_MIPS_Emulator
 	public class MIPS_SB : MIPS_Instruction
 	{
 		public override void execute(ref MIPS_InstructionContext context) {
-			Int32 vAddr = base.signExtend16(context.getImm());
-			vAddr += (Int32)context.getRegisters()[context.getRS()].getValue();
-			context.getMemory().StoreByte((UInt32)vAddr, (byte)context.getRegisters()[context.getRT()].getValue());
+			int vAddr = base.signExtend16To32(context.getImm());
+			vAddr += (int)context.getRegisters()[context.getRS()].getValue();
+			context.getMemory().StoreByte((uint)vAddr, (byte)context.getRegisters()[context.getRT()].getValue());
 		}
 	}
 
@@ -803,16 +844,24 @@ namespace Standalone_MIPS_Emulator
 	public class MIPS_SH : MIPS_Instruction
 	{
 		public override void execute(ref MIPS_InstructionContext context) {
-			Int32 vAddr = base.signExtend16(context.getImm());
-			vAddr += (Int32)context.getRegisters()[context.getRS()].getValue();
-			context.getMemory().StoreHalf((UInt32)vAddr, (UInt16)context.getRegisters()[context.getRT()].getValue());
+			int vAddr = base.signExtend16To32(context.getImm());
+			vAddr += (int)context.getRegisters()[context.getRS()].getValue();
+			context.getMemory().StoreHalf((uint)vAddr, (ushort)context.getRegisters()[context.getRT()].getValue());
 		}
 	}
 
+	// Store Word Left
 	public class MIPS_SWL : MIPS_Instruction
 	{
 		public override void execute(ref MIPS_InstructionContext context) {
-			throw new MIPS_Exception(MIPS_Exception.ExceptionCode.UNIMPLEMENTED);
+			int vAddr = base.signExtend16To32(context.getImm());
+			vAddr += (int)context.getRegisters()[context.getRS()].getValue();
+			uint rt = context.getRegisters()[context.getRT()].getValue();
+			ushort lefthalf = (ushort)(rt & 0xFFFF0000);
+			Byte left1 = (Byte)(lefthalf & 0xFF00);
+			Byte left2 = (Byte)(lefthalf & 0x00FF);
+			context.getMemory().StoreByte((uint)vAddr, left2);
+			context.getMemory().StoreByte((uint)vAddr-1, left1);
 		}
 	}
 
@@ -820,16 +869,21 @@ namespace Standalone_MIPS_Emulator
 	public class MIPS_SW : MIPS_Instruction
 	{
 		public override void execute(ref MIPS_InstructionContext context) {
-			Int32 vAddr = base.signExtend16(context.getImm());
-			vAddr += (Int32)context.getRegisters()[context.getRS()].getValue();
-			context.getMemory().StoreWord((UInt32)vAddr, context.getRegisters()[context.getRT()].getValue());
+			int vAddr = base.signExtend16To32(context.getImm());
+			vAddr += (int)context.getRegisters()[context.getRS()].getValue();
+			context.getMemory().StoreWord((uint)vAddr, context.getRegisters()[context.getRT()].getValue());
 		}
 	}
 
+	// Store Word Right
 	public class MIPS_SWR : MIPS_Instruction
 	{
 		public override void execute(ref MIPS_InstructionContext context) {
-			throw new MIPS_Exception(MIPS_Exception.ExceptionCode.UNIMPLEMENTED);
+			int vAddr = base.signExtend16To32(context.getImm());
+			vAddr += (int)context.getRegisters()[context.getRS()].getValue();
+			uint rt = context.getRegisters()[context.getRT()].getValue();
+			ushort righthalf = (ushort)(rt & 0x0000FFFF);
+			context.getMemory().StoreHalf((uint)vAddr-1, righthalf);
 		}
 	}
 
@@ -846,9 +900,9 @@ namespace Standalone_MIPS_Emulator
 	public class MIPS_LL : MIPS_Instruction
 	{
 		public override void execute(ref MIPS_InstructionContext context) {
-			Int32 vAddr = signExtend32(context.getImm());
-			vAddr += (Int32)context.getRegisters()[context.getRS()].getValue();
-			context.getRegisters()[context.getRT()].setValue(context.getMemory().ReadWord((UInt32)vAddr));
+			int vAddr = signExtend16To32(context.getImm());
+			vAddr += (int)context.getRegisters()[context.getRS()].getValue();
+			context.getRegisters()[context.getRT()].setValue(context.getMemory().ReadWord((uint)vAddr));
 		}
 	}
 
@@ -885,10 +939,10 @@ namespace Standalone_MIPS_Emulator
 	public class MIPS_SC : MIPS_Instruction
 	{
 		public override void execute(ref MIPS_InstructionContext context) {
-			Int32 vAddr = signExtend32(context.getImm());
-			vAddr += (Int32)context.getRegisters()[context.getRS()].getValue();
+			int vAddr = signExtend16To32(context.getImm());
+			vAddr += (int)context.getRegisters()[context.getRS()].getValue();
 			// FIXME: if LLBit == 1 then
-			context.getMemory().StoreWord((UInt32)vAddr, context.getRegisters()[context.getRT()].getValue());
+			context.getMemory().StoreWord((uint)vAddr, context.getRegisters()[context.getRT()].getValue());
 			// FIXME: then rt = LLbit
 			context.getRegisters()[context.getRT()].setValue(0x1);
 		}
@@ -924,7 +978,7 @@ namespace Standalone_MIPS_Emulator
 	public class MIPS_BGEZ : MIPS_Instruction
 	{
 		public override void execute(ref MIPS_InstructionContext context) {
-			if (context.getRegisters()[context.getRS()].getValue() >= 0) {
+			if ((int)context.getRegisters()[context.getRS()].getValue() >= 0) {
 				context.getBranchTarget().setValue(base.calculateBTA(context.getPC().getValue(), context.getImm()));
 				context.setBranchDelay(true);
 			}
@@ -935,7 +989,7 @@ namespace Standalone_MIPS_Emulator
 	public class MIPS_BGEZALL : MIPS_Instruction
 	{
 		public override void execute(ref MIPS_InstructionContext context) {
-			if (context.getRegisters()[context.getRS()].getValue() >= 0) {
+			if ((int)context.getRegisters()[context.getRS()].getValue() >= 0) {
 				context.getRegisters()[31].setValue(context.getPC().getValue() + 4);
 				context.getBranchTarget().setValue(base.calculateBTA(context.getPC().getValue(), context.getImm()));
 				context.setBranchDelay(true);
@@ -950,7 +1004,7 @@ namespace Standalone_MIPS_Emulator
 	public class MIPS_BGEZL : MIPS_Instruction
 	{
 		public override void execute(ref MIPS_InstructionContext context) {
-			if (context.getRegisters()[context.getRS()].getValue() >= 0) {
+			if ((int)context.getRegisters()[context.getRS()].getValue() >= 0) {
 				context.getBranchTarget().setValue(base.calculateBTA(context.getPC().getValue(), context.getImm()));
 				context.setBranchDelay(true);
 			} 
@@ -964,7 +1018,7 @@ namespace Standalone_MIPS_Emulator
 	public class MIPS_BLTZ : MIPS_Instruction
 	{
 		public override void execute(ref MIPS_InstructionContext context) {
-			if (context.getRegisters()[context.getRS()].getValue() < 0) {
+			if ((int)context.getRegisters()[context.getRS()].getValue() < 0) {
 				context.getBranchTarget().setValue(base.calculateBTA(context.getPC().getValue(), context.getImm()));
 				context.setBranchDelay(true);
 			}
@@ -975,7 +1029,7 @@ namespace Standalone_MIPS_Emulator
 	public class MIPS_BLTZAL : MIPS_Instruction
 	{
 		public override void execute(ref MIPS_InstructionContext context) {
-			if (context.getRegisters()[context.getRS()].getValue() < 0) {
+			if ((int)context.getRegisters()[context.getRS()].getValue() < 0) {
 				context.getRegisters()[31].setValue(context.getPC().getValue() + 4);
 				context.getBranchTarget().setValue(base.calculateBTA(context.getPC().getValue(), context.getImm()));
 				context.setBranchDelay(true);
@@ -987,7 +1041,7 @@ namespace Standalone_MIPS_Emulator
 	public class MIPS_BLTZALL : MIPS_Instruction
 	{
 		public override void execute(ref MIPS_InstructionContext context) {
-			if (context.getRegisters()[context.getRS()].getValue() < 0) {
+			if ((int)context.getRegisters()[context.getRS()].getValue() < 0) {
 				context.getRegisters()[31].setValue(context.getPC().getValue() + 4);
 				context.getBranchTarget().setValue(base.calculateBTA(context.getPC().getValue(), context.getImm()));
 				context.setBranchDelay(true);
@@ -1002,7 +1056,7 @@ namespace Standalone_MIPS_Emulator
 	public class MIPS_BLTZL : MIPS_Instruction
 	{
 		public override void execute(ref MIPS_InstructionContext context) {
-			if (context.getRegisters()[context.getRS()].getValue() < 0) {
+			if ((int)context.getRegisters()[context.getRS()].getValue() < 0) {
 				context.getBranchTarget().setValue(base.calculateBTA(context.getPC().getValue(), context.getImm()));
 				context.setBranchDelay(true);
 			} 
@@ -1016,10 +1070,10 @@ namespace Standalone_MIPS_Emulator
 	public class MIPS_CLO : MIPS_Instruction
 	{
 		public override void execute(ref MIPS_InstructionContext context) {
-			UInt32 count = 0;
-			const UInt32 mask = 0x1;
-			UInt32 value = context.getRegisters()[context.getRS()].getValue();
-			for (Int32 i=31; i>=0; i--) {
+			uint count = 0;
+			const uint mask = 0x1;
+			uint value = context.getRegisters()[context.getRS()].getValue();
+			for (int i=31; i>=0; i--) {
 				if (((value >> i) & mask) == mask) {
 					count++;
 					break;
@@ -1033,10 +1087,10 @@ namespace Standalone_MIPS_Emulator
 	public class MIPS_CLZ : MIPS_Instruction
 	{
 		public override void execute(ref MIPS_InstructionContext context) {
-			UInt32 count = 0;
-			const UInt32 mask = 0x1;
-			UInt32 value = context.getRegisters()[context.getRS()].getValue();
-			for (Int32 i=31; i>=0; i--) {
+			uint count = 0;
+			const uint mask = 0x1;
+			uint value = context.getRegisters()[context.getRS()].getValue();
+			for (int i=31; i>=0; i--) {
 				if (((value >> i) & mask) == 0x0) {
 					count++;
 					break;
@@ -1050,7 +1104,7 @@ namespace Standalone_MIPS_Emulator
 	public class MIPS_DI : MIPS_Instruction
 	{
 		public override void execute(ref MIPS_InstructionContext context) {
-			const UInt32 STATUS_IE_MASK = 0x1;
+			const uint STATUS_IE_MASK = 0x1;
 
 			context.getRegisters()[context.getRT()].setValue(context.getCoprocessors()[0].getRegister(12,0));
 			context.getCoprocessors()[0].setRegister(12,0, (context.getCoprocessors()[0].getRegister(12,0) & (~STATUS_IE_MASK)));
@@ -1061,7 +1115,7 @@ namespace Standalone_MIPS_Emulator
 	public class MIPS_EI : MIPS_Instruction
 	{
 		public override void execute(ref MIPS_InstructionContext context) {
-			const UInt32 STATUS_IE_MASK = 0x1;
+			const uint STATUS_IE_MASK = 0x1;
 
 			context.getRegisters()[context.getRT()].setValue(context.getCoprocessors()[0].getRegister(12,0));
 			context.getCoprocessors()[0].setRegister(12,0, (context.getCoprocessors()[0].getRegister(12,0) | STATUS_IE_MASK));
@@ -1075,20 +1129,20 @@ namespace Standalone_MIPS_Emulator
 	public class MIPS_EXT : MIPS_Instruction
 	{
 		public override void execute(ref MIPS_InstructionContext context) {
-			UInt32 msbd = (UInt32)context.getShamt();
-			Int32 lsb = (Int32)context.getRegisters()[context.getRD()].getValue();
+			uint msbd = (uint)context.getShamt();
+			int lsb = (int)context.getRegisters()[context.getRD()].getValue();
 			if ((lsb + msbd) > 31) {
 				// UNPREDICTABLE
 				return;
 			}
 
-			UInt32 mask = ((UInt32)0x1 << lsb);
-			UInt32 temp = 0x0;
-			UInt32 res = 0x0;
-			Int32 shift = lsb;
-			UInt32 rs = context.getRegisters()[context.getRS()].getValue();
+			uint mask = ((uint)0x1 << lsb);
+			uint temp = 0x0;
+			uint res = 0x0;
+			int shift = lsb;
+			uint rs = context.getRegisters()[context.getRS()].getValue();
 
-			for (Int32 count=0; count != msbd; count++) {
+			for (int count=0; count != msbd; count++) {
 				temp = mask & rs;
 				temp >>= shift;
 				shift--;
@@ -1105,20 +1159,20 @@ namespace Standalone_MIPS_Emulator
 	public class MIPS_INS : MIPS_Instruction
 	{
 		public override void execute(ref MIPS_InstructionContext context) {
-			UInt32 msbd = (UInt32)context.getShamt();
-			Int32 lsb = (Int32)context.getRegisters()[context.getRD()].getValue();
+			uint msbd = (uint)context.getShamt();
+			int lsb = (int)context.getRegisters()[context.getRD()].getValue();
 			if ((lsb + msbd) > 31) {
 				// UNPREDICTABLE
 				return;
 			}
 
-			UInt32 mask = ((UInt32)0x1 << lsb);
-			UInt32 temp = 0x0;
-			UInt32 res = 0x0;
-			Int32 shift = lsb;
-			UInt32 rs = context.getRegisters()[context.getRS()].getValue();
+			uint mask = ((uint)0x1 << lsb);
+			uint temp = 0x0;
+			uint res = 0x0;
+			int shift = lsb;
+			uint rs = context.getRegisters()[context.getRS()].getValue();
 
-			for (Int32 count=0; count != msbd; count++) {
+			for (int count=0; count != msbd; count++) {
 				temp = mask & rs;
 				temp >>= shift;
 				shift--;
@@ -1126,7 +1180,7 @@ namespace Standalone_MIPS_Emulator
 				res |= temp;
 			}
 
-			res <<= (Int32)msbd;
+			res <<= (int)msbd;
 			res |= context.getRegisters()[context.getRT()].getValue();
 			context.getRegisters()[context.getRT()].setValue(res);
 		}
