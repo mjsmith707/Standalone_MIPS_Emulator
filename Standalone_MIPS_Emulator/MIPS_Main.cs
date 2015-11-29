@@ -43,6 +43,9 @@ namespace Standalone_MIPS_Emulator {
 			perfTimer.Enabled = false;
 
 			CPU0.start();
+
+            // IO Block
+            Console.ReadKey();
 		}
 
 		private static void cycleSnapshotOnTrigger(Object source, ElapsedEventArgs e) {

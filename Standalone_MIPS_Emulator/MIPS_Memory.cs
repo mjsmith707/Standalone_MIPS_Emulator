@@ -102,9 +102,16 @@ namespace Standalone_MIPS_Emulator {
 
 		// Store a single byte
 		public void StoreByte(uint address, byte value) {
-			// If the physical frame doesn't exist
-			// create a new one.
-			if (!pageExists(address)) {
+            // Check if a MMIO device has claimed this address
+            if (deviceExists(address))
+            {
+                MIPS_MemoryMappedIO device = (MIPS_MemoryMappedIO)devicetable[address];
+                device.StoreByte(address, value);
+                return;
+            }
+            // If the physical frame doesn't exist
+            // create a new one.
+            else if (!pageExists(address)) {
 				pagetable.Add(address&0xFFFFF000, new MIPS_MemoryPage(address, defaultflags));
 			}
 

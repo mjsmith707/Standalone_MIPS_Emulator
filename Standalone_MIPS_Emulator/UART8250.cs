@@ -25,7 +25,19 @@ namespace Standalone_MIPS_Emulator
 		private byte MSR;
 		private byte SR;
 
-		public UART8250() {
+        // Character Buffer
+        private const byte BUFFSIZE = 16;
+        private byte[] buffer;
+        private byte bufferSavePos;
+        private byte bufferReadPos;
+        private byte numChars;
+
+        // Misc
+        private bool rbravail;
+        private const byte ONE = 0x1;
+        private const byte ZERO = 0x0;
+
+        public UART8250() {
 			addresses = new List<uint>();
 
 			// UART Addresses
@@ -68,7 +80,11 @@ namespace Standalone_MIPS_Emulator
 
 		// Device initializer
 		public override void initDevice() {
-			THR = 0x0;
+            buffer = new byte[BUFFSIZE];
+            bufferSavePos = 0;
+            bufferReadPos = 0;
+            numChars = 0;
+            THR = 0x0;
 			RBR = 0x0;
 			DLL = 0x0;
 			IER = 0x0;
@@ -100,7 +116,10 @@ namespace Standalone_MIPS_Emulator
 						return DLL;
 					}
 					else {
-						return RBR;
+                        // Clear Data Ready bit
+                        byte mask = 1;
+                        LSR &= (byte)~mask;
+                        return RBR;
 					}
 				}
 				case UART_BASE+1: {
@@ -184,6 +203,14 @@ namespace Standalone_MIPS_Emulator
 				}
 			}
 		}
+
+        // Method to receive character from console
+        public void sendChar(char ch) {
+            // Save to buffer
+            RBR = (byte)ch;
+            // Signal that there is data available
+            LSR |= ONE;
+        }
 	}
 }
 

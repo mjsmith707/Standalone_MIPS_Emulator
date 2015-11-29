@@ -886,15 +886,14 @@ namespace Standalone_MIPS_Emulator {
 			}
 			else if (Console.KeyAvailable) {
 				ConsoleKeyInfo key = Console.ReadKey(true);
-				switch(key.Key) {
-					case ConsoleKey.B: {
-						waitForInput();
-						break;
-					}
-					default: {
-						break;
-					}
-				}
+                if (((key.Modifiers & ConsoleModifiers.Control) != 0) && ((key.Modifiers & ConsoleModifiers.Shift) != 0) && (key.Key == ConsoleKey.B)) {
+                    waitForInput();
+                    return;
+                }
+                else {
+                    // Forward to UART
+                    com0.sendChar(key.KeyChar);
+                }
 			}
 		}
 
@@ -903,11 +902,11 @@ namespace Standalone_MIPS_Emulator {
 			bool resume = false;
 			while (!resume) {
 				Console.WriteLine("");
-				Console.Write("> ");
+				Console.Write("LOM> ");
 				input = Console.ReadLine();
 				if (input == "") {
 					input = lastcmd;
-					Console.WriteLine("> " + lastcmd);
+					Console.WriteLine("LOM> " + lastcmd);
 				}
 				switch(input) {
 					case "breakpoint": {
