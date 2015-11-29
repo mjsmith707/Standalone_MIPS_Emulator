@@ -152,7 +152,7 @@ namespace Standalone_MIPS_Emulator
 	public class MIPS_JALR : MIPS_Instruction
 	{
 		public override void execute(ref MIPS_InstructionContext context) {
-			context.getRegisters()[31].setValue(context.getRegisters()[context.getRD()].getValue());
+			context.getRegisters()[context.getRD()].setValue(context.getPC().getValue() + 4);
 			context.getBranchTarget().setValue(context.getRegisters()[context.getRS()].getValue());
 			context.setBranchDelay(true);
 		}
@@ -229,6 +229,18 @@ namespace Standalone_MIPS_Emulator
 	{
 		public override void execute(ref MIPS_InstructionContext context) {
 			context.getLO().setValue(context.getRegisters()[context.getRS()].getValue());
+		}
+	}
+
+	// Multiply Word to GPR
+	public class MIPS_MUL : MIPS_Instruction
+	{
+		public override void execute(ref MIPS_InstructionContext context) {
+			unchecked {
+				Int64 result = context.getRegisters()[context.getRS()].getValue();
+				result *= (int)context.getRegisters()[context.getRT()].getValue();
+				context.getRegisters()[context.getRD()].setValue((uint)(result & 0x00000000FFFFFFFF));
+			}
 		}
 	}
 
@@ -491,6 +503,7 @@ namespace Standalone_MIPS_Emulator
 	public class MIPS_JAL : MIPS_Instruction
 	{
 		public override void execute(ref MIPS_InstructionContext context) {
+			
 			context.getRegisters()[31].setValue(context.getPC().getValue() + 4);
 			context.getBranchTarget().setValue(base.calculateETA(context.getPC().getValue(), context.getJimm()));
 			context.setBranchDelay(true);
@@ -755,7 +768,10 @@ namespace Standalone_MIPS_Emulator
 		public override void execute(ref MIPS_InstructionContext context) {
 			int vAddr = base.signExtend16To32(context.getImm());
 			vAddr += (int)context.getRegisters()[context.getRS()].getValue();
-			context.getRegisters()[context.getRT()].setValue(context.getMemory().ReadByte((uint)vAddr));
+			byte val = context.getMemory().ReadByte((uint)vAddr);
+			sbyte signval = (sbyte)val;
+			int signval32 = (int)signval;
+			context.getRegisters()[context.getRT()].setValue((uint)signval32);
 		}
 	}
 
@@ -798,11 +814,10 @@ namespace Standalone_MIPS_Emulator
 	public class MIPS_LBU : MIPS_Instruction
 	{
 		public override void execute(ref MIPS_InstructionContext context) {
-			ushort offset = zeroExtend16To16(context.getImm());
-			uint address = context.getRegisters()[context.getRD()].getValue();
-			address += (uint)offset;
-			uint value = context.getMemory().ReadByte(address);
-			context.getRegisters()[context.getRT()].setValue(value);
+			int vAddr = base.signExtend16To32(context.getImm());
+			vAddr += (int)context.getRegisters()[context.getRS()].getValue();
+			byte val = context.getMemory().ReadByte((uint)vAddr);
+			context.getRegisters()[context.getRT()].setValue((uint)val);
 		}
 	}
 

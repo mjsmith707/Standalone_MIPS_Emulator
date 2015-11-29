@@ -221,6 +221,7 @@ namespace Standalone_MIPS_Emulator {
 
 			// SPECIAL2 Instructions
 			special2 = new MIPS_Instruction[64];
+			special2[0x02] = new MIPS_MUL();
 			special2[0x20] = new MIPS_CLZ();
 			special2[0x21] = new MIPS_CLO();
 
@@ -414,6 +415,11 @@ namespace Standalone_MIPS_Emulator {
 		// Program Counter Accessor for Unit Testing
 		public uint getPC() {
 			return PC.getValue();
+		}
+
+		// Main Memory Accessor for Unit Testing
+		public MIPS_Memory getMemory() {
+			return mainMemory;
 		}
 
 		// Service enqueued interrupts/exceptions

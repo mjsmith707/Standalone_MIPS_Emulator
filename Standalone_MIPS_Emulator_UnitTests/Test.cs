@@ -596,11 +596,106 @@ namespace Standalone_MIPS_Emulator_UnitTests
 			Assert.AreEqual(0x00400030, cpu.getRegister(31));
 		}
 
+		// Jalr - jump and link register
 		[Test ()]
 		public void jalr() {
-			// FIXME: jalr can select a return address register to save in different from 31
-			// It is the only instruction that can do this!
-			Assert.AreEqual(0, 1);
+			MIPS_CPU cpu = new MIPS_CPU();
+			cpu.setPC(0x00400000);
+			cpu.loadText(0x00400000, 0x2002ffcb);
+			cpu.loadText(0x00400004, 0x3c010040);
+			cpu.loadText(0x00400008, 0x34240000);
+			cpu.loadText(0x0040000c, 0x0080f809);
+			cpu.loadText(0x00400010, 0x00000000);
+			cpu.singleStep();
+			cpu.singleStep();
+			cpu.singleStep();
+			cpu.singleStep();
+			cpu.singleStep();
+			cpu.singleStep();
+			Assert.AreEqual(0x00400000, cpu.getPC()-4);
+			Assert.AreEqual(0x00400014, cpu.getRegister(31));
+		}
+
+		// Jr - jump register
+		[Test ()]
+		public void jr() {
+			MIPS_CPU cpu = new MIPS_CPU();
+			cpu.setPC(0x00400000);
+			cpu.loadText(0x00400000, 0x2002ffcb);
+			cpu.loadText(0x00400004, 0x3c010040);
+			cpu.loadText(0x00400008, 0x34240000);
+			cpu.loadText(0x0040000c, 0x00800008);
+			cpu.loadText(0x00400010, 0x00000000);
+			cpu.singleStep();
+			cpu.singleStep();
+			cpu.singleStep();
+			cpu.singleStep();
+			cpu.singleStep();
+			cpu.singleStep();
+			Assert.AreEqual(0x00400000, cpu.getPC()-4);
+		}
+
+		// Lb - load byte
+		[Test ()]
+		public void lb() {
+			MIPS_CPU cpu = new MIPS_CPU();
+			cpu.setPC(0x00400000);
+			cpu.loadText(0x00400000, 0x2002ffcb);
+			cpu.loadText(0x00400004, 0x3c011001);
+			cpu.loadText(0x00400008, 0x34240020);
+			cpu.loadText(0x0040000c, 0xa082ffe0);
+			cpu.loadText(0x00400010, 0x8083ffe0);
+			cpu.singleStep();
+			cpu.singleStep();
+			cpu.singleStep();
+			cpu.singleStep();
+			cpu.singleStep();
+			Assert.AreEqual(0xffffffcb, cpu.getRegister(2));
+			Assert.AreEqual(0xffffffcb, cpu.getRegister(3));
+			Assert.AreEqual(0xcb000000, cpu.getMemory().ReadWord(0x10010000));
+			Assert.AreEqual(0x000000cb, cpu.getMemory().ReadByte(0x10010000));
+		}
+
+		// Lbu - load byte unsigned
+		[Test ()]
+		public void lbu() {
+			MIPS_CPU cpu = new MIPS_CPU();
+			cpu.setPC(0x00400000);
+			cpu.loadText(0x00400000, 0x2002ffcb);
+			cpu.loadText(0x00400004, 0x3c011001);
+			cpu.loadText(0x00400008, 0x34240020);
+			cpu.loadText(0x0040000c, 0xa082ffe0);
+			cpu.loadText(0x00400010, 0x9083ffe0);
+			cpu.singleStep();
+			cpu.singleStep();
+			cpu.singleStep();
+			cpu.singleStep();
+			cpu.singleStep();
+			Assert.AreEqual(0xffffffcb, cpu.getRegister(2));
+			Assert.AreEqual(0x000000cb, cpu.getRegister(3));
+			Assert.AreEqual(0xcb000000, cpu.getMemory().ReadWord(0x10010000));
+			Assert.AreEqual(0x000000cb, cpu.getMemory().ReadByte(0x10010000));
+		}
+
+		// Sb - store byte
+		[Test ()]
+		public void sb() {
+			MIPS_CPU cpu = new MIPS_CPU();
+			cpu.setPC(0x00400000);
+			cpu.loadText(0x00400000, 0x2002ffcb);
+			cpu.loadText(0x00400004, 0x3c011001);
+			cpu.loadText(0x00400008, 0x34240020);
+			cpu.loadText(0x0040000c, 0xa082ffe0);
+			cpu.loadText(0x00400010, 0x8083ffe0);
+			cpu.singleStep();
+			cpu.singleStep();
+			cpu.singleStep();
+			cpu.singleStep();
+			cpu.singleStep();
+			Assert.AreEqual(0xffffffcb, cpu.getRegister(2));
+			Assert.AreEqual(0xffffffcb, cpu.getRegister(3));
+			Assert.AreEqual(0xcb000000, cpu.getMemory().ReadWord(0x10010000));
+			Assert.AreEqual(0x000000cb, cpu.getMemory().ReadByte(0x10010000));
 		}
 	}
 }

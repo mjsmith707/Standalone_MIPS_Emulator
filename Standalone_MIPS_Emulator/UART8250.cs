@@ -11,7 +11,7 @@ namespace Standalone_MIPS_Emulator
 	{
 		// List of Port Addresses
 		private List<uint> addresses;
-
+		const uint UART_BASE = 0xB40003f8;
 		private byte THR;
 		private byte RBR;
 		private byte DLL;
@@ -33,37 +33,37 @@ namespace Standalone_MIPS_Emulator
 			// THR Transmitter Holding Buffer
 			// RBR Receiver Buffer
 			// DLL Divisor Latch Low Byte
-			addresses.Add(0x000003F8);	
+			addresses.Add(UART_BASE);	
 
 			// Base+1
 			// IER Interrupt Enable Register
 			// DLH Divisor Latch High Byte
-			addresses.Add(0x000003F9);
+			addresses.Add(UART_BASE+1);
 
 			// Base+2
 			// IIR Interrupt Identification Register
 			// FCR FIFO Control Register
-			addresses.Add(0x000003FA);
+			addresses.Add(UART_BASE+2);
 
 			// Base+3
 			// LCR Line Control Register
-			addresses.Add(0x000003FB);
+			addresses.Add(UART_BASE+3);
 
 			// Base+4
 			// MCR Modem Control Register
-			addresses.Add(0x000003FC);
+			addresses.Add(UART_BASE+4);
 
 			// Base+5
 			// LSR Line Status Register
-			addresses.Add(0x000003FD);
+			addresses.Add(UART_BASE+5);
 
 			// Base+6
 			// MSR Modem Status Register
-			addresses.Add(0x000003FE);
+			addresses.Add(UART_BASE+6);
 
 			// Base+7
 			// SR  Scratch Register
-			addresses.Add(0x000003FF);
+			addresses.Add(UART_BASE+7);
 		}
 
 		// Device initializer
@@ -95,7 +95,7 @@ namespace Standalone_MIPS_Emulator
 		// Read a single byte
 		public override byte ReadByte(uint address) {
 			switch (address) {
-				case 0x000003F8: {
+				case UART_BASE: {
 					if (DLABSet()) {
 						return DLL;
 					}
@@ -103,7 +103,7 @@ namespace Standalone_MIPS_Emulator
 						return RBR;
 					}
 				}
-				case 0x000003F9: {
+				case UART_BASE+1: {
 					if (DLABSet()) {
 						return DLH;
 					}
@@ -111,22 +111,22 @@ namespace Standalone_MIPS_Emulator
 						return IER;
 					}
 				}
-				case 0x000003FA: {
+				case UART_BASE+2: {
 					return IIR;
 				}
-				case 0x000003FB: {
+				case UART_BASE+3: {
 					return LCR;
 				}
-				case 0x000003FC: {
+				case UART_BASE+4: {
 					return MCR;
 				}
-				case 0x000003FD: {
+				case UART_BASE+5: {
 					return LSR;
 				}
-				case 0x000003FE: {
+				case UART_BASE+6: {
 					return MSR;
 				}
-				case 0x000003FF: {
+				case UART_BASE+7: {
 					return SR;
 				}
 				default: {
@@ -138,7 +138,7 @@ namespace Standalone_MIPS_Emulator
 		// Store a single byte
 		public override void StoreByte(uint address, byte value) {
 			switch (address) {
-				case 0x000003F8: {
+				case UART_BASE: {
 					if (DLABSet()) {
 						DLL = value;
 					}
@@ -148,7 +148,7 @@ namespace Standalone_MIPS_Emulator
 					}
 					break;
 				}
-				case 0x000003F9: {
+				case UART_BASE+1: {
 					if (DLABSet()) {
 						DLH = value;
 					}
@@ -157,25 +157,25 @@ namespace Standalone_MIPS_Emulator
 					}
 					break;
 				}
-				case 0x000003FA: {
+				case UART_BASE+2: {
 					FCR = value;
 					break;
 				}
-				case 0x000003FB: {
+				case UART_BASE+3: {
 					LCR = value;
 					break;
 				}
-				case 0x000003FC: {
+				case UART_BASE+4: {
 					MCR = value;
 					break;
 				}
-				case 0x000003FD: {
+				case UART_BASE+5: {
 					break;
 				}
-				case 0x000003FE: {
+				case UART_BASE+6: {
 					break;
 				}
-				case 0x000003FF: {
+				case UART_BASE+7: {
 					SR = value;
 					break;
 				}
