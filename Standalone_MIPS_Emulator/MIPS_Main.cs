@@ -32,6 +32,9 @@ namespace Standalone_MIPS_Emulator {
 			//CPU0.setPC(0x400550);
 			//CPU0.elfLoader("main.o");
 			CPU0.elfLoader("mmon.elf");
+            //CPU0.elfLoader("netbsd-GENERIC32_IP12");
+            //CPU0.makeBootArgs(0xFFFF4000,3,"debug earlycon=uart8250,mmio,0xb40003f8,115200n8 earlyprintk=serial,0xb40003f8,115200", "");
+            //CPU0.makeBootArgs(0xFF004000,1,"earlycon=uart8250,mmio,0xb40003f8,115200n8", "");
 			//CPU0.elfLoader("vmlinux");
 
 

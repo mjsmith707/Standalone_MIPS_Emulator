@@ -229,6 +229,7 @@ namespace Standalone_MIPS_Emulator {
 			special3 = new MIPS_Instruction[64];
 			special3[0x0] = new MIPS_EXT();
 			special3[0x4] = new MIPS_INS();
+            special3[0x20] = new MIPS_SEH();
 
 			// REGIMM Instructions
 			regimm = new MIPS_Instruction[32];
@@ -330,12 +331,13 @@ namespace Standalone_MIPS_Emulator {
 					// Simulation Error
 					// Stop FDX Loop
 					Console.WriteLine("Exception: " + e.Message);
-					Console.WriteLine("Cycle" + "    = {0}", cyclecount);
+					//Console.WriteLine("Cycle" + "    = {0}", cyclecount);
 					Console.WriteLine("PC     = 0x{0:X}", PC.getValue());
 					Console.WriteLine("IR     = 0x{0:X}", IR.getValue());
-					printGPRRegisters();
-					printCPC0Registers();
-					return;
+					//printGPRRegisters();
+					//printCPC0Registers();
+					waitForInput();
+                    continue;
 				}
 			}
 		}
@@ -861,6 +863,39 @@ namespace Standalone_MIPS_Emulator {
 				}
 			}
 		}
+
+        // Makes bootloader arguments for Linux and stores them at an address
+        // Also loads into appropriate a registers
+        public void makeBootArgs(uint address, uint argc, string arguments, string envvars) {
+            // Set a0
+            registerFile[4].setValue(argc);
+
+            // Build arguments in memory starting at address
+            uint argstart = address;
+            for (int i=0; i<arguments.Length; i++) {
+                mainMemory.StoreByte(address, (byte)arguments[i]);
+                address++;
+            }
+            // Store null terminator
+            mainMemory.StoreByte(address, 0);
+            address++;
+
+            uint envstart = address;
+            // Build environment variables
+            for (int i=0; i<envvars.Length; i++) {
+                mainMemory.StoreByte(address, (byte)envvars[i]);
+            }
+
+            // Set a1
+            registerFile[5].setValue(argstart);
+
+            // Set a2
+            registerFile[6].setValue(envstart);
+
+            // Set a3
+            registerFile[7].setValue(0);
+        }
+
 
 		// No union support so here we are.
 		// Joins 4 byte array into uint

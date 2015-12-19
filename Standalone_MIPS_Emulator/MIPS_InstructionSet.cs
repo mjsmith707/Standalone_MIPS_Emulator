@@ -855,6 +855,16 @@ namespace Standalone_MIPS_Emulator
 		}
 	}
 
+    // Sign-Extend Halfword
+	public class MIPS_SEH : MIPS_Instruction
+	{
+		public override void execute(ref MIPS_InstructionContext context) {
+            short half = (short)context.getRegisters()[context.getRT()].getValue();
+            int full = (int)half;
+			context.getRegisters()[context.getRD()].setValue((uint)full);
+		}
+	}
+
 	// Store Halfword
 	public class MIPS_SH : MIPS_Instruction
 	{

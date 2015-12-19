@@ -1,0 +1,10 @@
+C:\Users\msmith\Documents\GitHub\Standalone_MIPS_Emulator\Standalone_MIPS_Emulator_UnitTests\bin\Release\Standalone_MIPS_Emulator_UnitTests.dll
+C:\Users\msmith\Documents\GitHub\Standalone_MIPS_Emulator\Standalone_MIPS_Emulator_UnitTests\bin\Release\Standalone_MIPS_Emulator_UnitTests.pdb
+C:\Users\msmith\Documents\GitHub\Standalone_MIPS_Emulator\Standalone_MIPS_Emulator_UnitTests\bin\Release\nunit.framework.dll
+C:\Users\msmith\Documents\GitHub\Standalone_MIPS_Emulator\Standalone_MIPS_Emulator_UnitTests\bin\Release\Standalone_MIPS_Emulator.exe
+C:\Users\msmith\Documents\GitHub\Standalone_MIPS_Emulator\Standalone_MIPS_Emulator_UnitTests\bin\Release\ELFSharp.dll
+C:\Users\msmith\Documents\GitHub\Standalone_MIPS_Emulator\Standalone_MIPS_Emulator_UnitTests\bin\Release\nunit.framework.xml
+C:\Users\msmith\Documents\GitHub\Standalone_MIPS_Emulator\Standalone_MIPS_Emulator_UnitTests\bin\Release\ELFSharp.pdb
+C:\Users\msmith\Documents\GitHub\Standalone_MIPS_Emulator\Standalone_MIPS_Emulator_UnitTests\obj\Release\Standalone_MIPS_Emulator_UnitTests.csprojResolveAssemblyReference.cache
+C:\Users\msmith\Documents\GitHub\Standalone_MIPS_Emulator\Standalone_MIPS_Emulator_UnitTests\obj\Release\Standalone_MIPS_Emulator_UnitTests.dll
+C:\Users\msmith\Documents\GitHub\Standalone_MIPS_Emulator\Standalone_MIPS_Emulator_UnitTests\obj\Release\Standalone_MIPS_Emulator_UnitTests.pdb
